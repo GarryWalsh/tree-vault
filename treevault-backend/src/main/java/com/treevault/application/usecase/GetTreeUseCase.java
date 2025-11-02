@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class GetTreeUseCase {
     
     private final NodeRepository nodeRepository;
@@ -17,6 +16,7 @@ public class GetTreeUseCase {
         this.nodeRepository = nodeRepository;
     }
     
+    @Transactional
     public Node execute() {
         return nodeRepository.findRootNode()
             .orElseGet(() -> {
@@ -25,6 +25,7 @@ public class GetTreeUseCase {
             });
     }
     
+    @Transactional(readOnly = true)
     public Node getNode(NodeId nodeId) {
         return nodeRepository.findById(nodeId)
             .orElseThrow(() -> new NodeNotFoundException(

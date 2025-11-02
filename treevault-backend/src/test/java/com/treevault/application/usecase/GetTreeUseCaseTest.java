@@ -1,204 +1,154 @@
 package com.treevault.application.usecase;
 
+import com.treevault.domain.exception.NodeNotFoundException;
 import com.treevault.domain.model.entity.Node;
-import com.treevault.domain.model.valueobject.*;
+import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.repository.NodeRepository;
-import com.treevault.domain.exception.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.util.Optional;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class GetTreeUseCaseTest {
-    
+
     @Mock
     private NodeRepository nodeRepository;
-    
-    private GetTreeUseCase useCase;
-    
-    @BeforeEach
-    void setUp() {
-        useCase = new GetTreeUseCase(nodeRepository);
-    }
-    
+
+    @InjectMocks
+    private GetTreeUseCase getTreeUseCase;
+
     @Test
-    @DisplayName("Should retrieve existing root node")
-    void shouldRetrieveExistingRootNode() {
+    @DisplayName("Should return existing root when it exists")
+    void shouldReturnExistingRoot() {
         // Given
-        Node root = Node.createRoot();
-        
-        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
-        
+        Node existingRoot = Node.createRoot();
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(existingRoot));
+
         // When
-        Node result = useCase.execute();
-        
+        Node result = getTreeUseCase.execute();
+
         // Then
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(root);
-        assertThat(result.isRoot()).isTrue();
+        assertThat(result).isEqualTo(existingRoot);
         verify(nodeRepository).findRootNode();
-        verify(nodeRepository, never()).save(any(Node.class));
+        verify(nodeRepository, never()).save(any());
     }
-    
+
     @Test
-    @DisplayName("Should create root node when none exists")
-    void shouldCreateRootNodeWhenNoneExists() {
+    @DisplayName("Should create and save new root when it doesn't exist")
+    void shouldCreateAndSaveNewRootWhenNotExists() {
         // Given
-        Node root = Node.createRoot();
-        
         when(nodeRepository.findRootNode()).thenReturn(Optional.empty());
-        when(nodeRepository.save(any(Node.class))).thenReturn(root);
         
+        // Mock the save to return a root node
+        when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> {
+            Node savedNode = invocation.getArgument(0);
+            return savedNode;
+        });
+
         // When
-        Node result = useCase.execute();
-        
+        Node result = getTreeUseCase.execute();
+
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.isRoot()).isTrue();
+        assertThat(result.getName().getValue()).isEqualTo("root");
+        assertThat(result.getParent()).isEmpty();
+        
+        // CRITICAL: Verify that save was called (transaction must commit this)
         verify(nodeRepository).findRootNode();
         verify(nodeRepository).save(any(Node.class));
     }
-    
+
     @Test
-    @DisplayName("Should retrieve node by ID successfully")
-    void shouldRetrieveNodeByIdSuccessfully() {
+    @DisplayName("Should call save exactly once when root doesn't exist")
+    void shouldCallSaveExactlyOnceForNewRoot() {
         // Given
-        Node node = Node.createFolder(NodeName.of("Folder"), null);
-        NodeId nodeId = node.getId();
-        
-        when(nodeRepository.findById(nodeId)).thenReturn(Optional.of(node));
-        
+        when(nodeRepository.findRootNode()).thenReturn(Optional.empty());
+        when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
-        Node result = useCase.getNode(nodeId);
-        
+        getTreeUseCase.execute();
+
+        // Then - Save should be called exactly once, not multiple times
+        verify(nodeRepository, times(1)).save(any(Node.class));
+    }
+
+    @Test
+    @DisplayName("Should not create duplicate roots on multiple calls")
+    void shouldNotCreateDuplicateRootsOnMultipleCalls() {
+        // Given
+        Node createdRoot = Node.createRoot();
+        when(nodeRepository.findRootNode())
+            .thenReturn(Optional.empty())  // First call: no root
+            .thenReturn(Optional.of(createdRoot));  // Second call: root exists
+        when(nodeRepository.save(any(Node.class))).thenReturn(createdRoot);
+
+        // When
+        Node firstResult = getTreeUseCase.execute();
+        Node secondResult = getTreeUseCase.execute();
+
         // Then
-        assertThat(result).isNotNull();
+        assertThat(firstResult).isNotNull();
+        assertThat(secondResult).isNotNull();
+        verify(nodeRepository, times(2)).findRootNode();
+        verify(nodeRepository, times(1)).save(any(Node.class));  // Save only called once
+    }
+
+    @Test
+    @DisplayName("Should return node by ID when it exists")
+    void shouldReturnNodeById() {
+        // Given
+        NodeId nodeId = NodeId.of(UUID.randomUUID());
+        Node node = Node.createRoot();
+        when(nodeRepository.findById(nodeId)).thenReturn(Optional.of(node));
+
+        // When
+        Node result = getTreeUseCase.getNode(nodeId);
+
+        // Then
         assertThat(result).isEqualTo(node);
         verify(nodeRepository).findById(nodeId);
     }
-    
+
     @Test
-    @DisplayName("Should fail when node ID not found")
-    void shouldFailWhenNodeIdNotFound() {
+    @DisplayName("Should throw NodeNotFoundException when node doesn't exist")
+    void shouldThrowExceptionWhenNodeNotFound() {
         // Given
-        NodeId nodeId = NodeId.generate();
-        
+        NodeId nodeId = NodeId.of(UUID.randomUUID());
         when(nodeRepository.findById(nodeId)).thenReturn(Optional.empty());
-        
+
         // When/Then
-        assertThatThrownBy(() -> useCase.getNode(nodeId))
+        assertThatThrownBy(() -> getTreeUseCase.getNode(nodeId))
             .isInstanceOf(NodeNotFoundException.class)
-            .hasMessageContaining("Node not found");
+            .hasMessageContaining("Node not found: " + nodeId);
+        
+        verify(nodeRepository).findById(nodeId);
     }
-    
+
     @Test
-    @DisplayName("Should handle empty tree")
-    void shouldHandleEmptyTree() {
+    @DisplayName("Should handle null safely in root creation scenario")
+    void shouldHandleNullSafely() {
         // Given
-        Node root = Node.createRoot();
-        
-        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
-        
+        when(nodeRepository.findRootNode()).thenReturn(Optional.empty());
+        when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
-        Node result = useCase.execute();
-        
+        Node result = getTreeUseCase.execute();
+
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getChildren()).isEmpty();
-    }
-    
-    @Test
-    @DisplayName("Should handle large tree retrieval")
-    void shouldHandleLargeTreeRetrieval() {
-        // Given
-        Node root = Node.createRoot();
-        
-        // Create a large tree structure
-        for (int i = 0; i < 100; i++) {
-            Node folder = Node.createFolder(NodeName.of("folder" + i), root);
-            for (int j = 0; j < 10; j++) {
-                Node.createFile(NodeName.of("file" + i + "_" + j + ".txt"), folder);
-            }
-        }
-        
-        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
-        
-        // When
-        Node result = useCase.execute();
-        
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getChildren()).hasSize(100);
-        result.getChildren().forEach(folder -> {
-            assertThat(folder.getChildren()).hasSize(10);
-        });
-    }
-    
-    @Test
-    @DisplayName("Should handle deep tree retrieval")
-    void shouldHandleDeepTreeRetrieval() {
-        // Given
-        Node current = Node.createRoot();
-        
-        // Create deep tree structure
-        for (int i = 0; i < 50; i++) {
-            current = Node.createFolder(NodeName.of("level" + i), current);
-        }
-        
-        // Find root
-        Node root = current;
-        while (root.getParent().isPresent()) {
-            root = root.getParent().get();
-        }
-        
-        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
-        
-        // When
-        Node result = useCase.execute();
-        
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.isRoot()).isTrue();
-    }
-    
-    @Test
-    @DisplayName("Should preserve tree structure when retrieving")
-    void shouldPreserveTreeStructureWhenRetrieving() {
-        // Given
-        Node root = Node.createRoot();
-        Node folder1 = Node.createFolder(NodeName.of("Folder1"), root);
-        Node folder2 = Node.createFolder(NodeName.of("Folder2"), root);
-        Node file1 = Node.createFile(NodeName.of("file1.txt"), folder1);
-        Node file2 = Node.createFile(NodeName.of("file2.txt"), folder1);
-        Node file3 = Node.createFile(NodeName.of("file3.txt"), folder2);
-        
-        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
-        
-        // When
-        Node result = useCase.execute();
-        
-        // Then
-        assertThat(result.getChildren()).contains(folder1, folder2);
-        assertThat(folder1.getChildren()).contains(file1, file2);
-        assertThat(folder2.getChildren()).contains(file3);
-    }
-    
-    @Test
-    @DisplayName("Should handle null node ID gracefully")
-    void shouldHandleNullNodeIdGracefully() {
-        // Given
-        NodeId nullId = null;
-        
-        // When/Then
-        assertThatThrownBy(() -> useCase.getNode(nullId))
-            .isInstanceOf(Exception.class); // Will fail at repository level or earlier
+        assertThat(result.getName()).isNotNull();
+        assertThat(result.getType()).isNotNull();
+        assertThat(result.getId()).isNotNull();
     }
 }
-

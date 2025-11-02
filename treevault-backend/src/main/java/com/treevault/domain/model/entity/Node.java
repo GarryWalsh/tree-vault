@@ -169,8 +169,8 @@ public class Node {
     }
     
     public void delete() {
-        if (isRoot() && !children.isEmpty()) {
-            throw new InvalidNodeOperationException("Cannot delete root node with children");
+        if (isRoot()) {
+            throw new InvalidNodeOperationException("Cannot delete the root node");
         }
         
         new ArrayList<>(children).forEach(Node::delete);

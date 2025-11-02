@@ -234,7 +234,7 @@ class NodeTest {
         }
         
         @Test
-        @DisplayName("Should prevent deleting root with children")
+        @DisplayName("Should prevent deleting root node with children")
         void shouldPreventDeletingRootWithChildren() {
             // Given
             Node root = Node.createRoot();
@@ -243,7 +243,19 @@ class NodeTest {
             // When/Then
             assertThatThrownBy(() -> root.delete())
                 .isInstanceOf(InvalidNodeOperationException.class)
-                .hasMessage("Cannot delete root node with children");
+                .hasMessageContaining("Cannot delete the root node");
+        }
+        
+        @Test
+        @DisplayName("Should prevent deleting empty root node")
+        void shouldPreventDeletingEmptyRoot() {
+            // Given
+            Node root = Node.createRoot();
+            
+            // When/Then - Root should NEVER be deletable, even when empty
+            assertThatThrownBy(() -> root.delete())
+                .isInstanceOf(InvalidNodeOperationException.class)
+                .hasMessageContaining("Cannot delete the root node");
         }
     }
     
