@@ -67,7 +67,7 @@ class PathCalculationServiceTest {
     void shouldCalculatePathForDeeplyNestedStructure() {
         // Given - Build path up to max depth - 1
         NodePath currentPath = NodePath.root();
-        for (int i = 0; i < 49; i++) {
+        for (int i = 0; i < 48; i++) {
             currentPath = currentPath.append(NodeName.of("level" + i));
         }
         NodeName nodeName = NodeName.of("FinalLevel");
@@ -77,15 +77,15 @@ class PathCalculationServiceTest {
         
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getDepth()).isEqualTo(50);
+        assertThat(result.getDepth()).isEqualTo(49);
     }
     
     @Test
     @DisplayName("Should fail when exceeding maximum depth")
     void shouldFailWhenExceedingMaximumDepth() {
-        // Given - Build path at max depth
+        // Given - Build path at max depth (root is 0, max depth is 49)
         NodePath currentPath = NodePath.root();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 49; i++) {
             currentPath = currentPath.append(NodeName.of("level" + i));
         }
         final NodePath finalPath = currentPath; // Make effectively final for lambda
@@ -94,7 +94,7 @@ class PathCalculationServiceTest {
         // When/Then - append() will throw when exceeding max depth
         assertThatThrownBy(() -> service.calculatePath(finalPath, nodeName))
             .isInstanceOf(NodeValidationException.class)
-            .hasMessageContaining("Maximum tree depth exceeded");
+            .hasMessageContaining("Maximum tree depth");
     }
     
     @Test

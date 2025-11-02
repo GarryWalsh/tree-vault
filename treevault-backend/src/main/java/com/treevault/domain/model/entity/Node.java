@@ -124,7 +124,9 @@ public class Node {
             throw new CircularReferenceException("Cannot move node to its own descendant");
         }
         
+        // Check for name conflicts, excluding the node being moved (for same-parent reordering)
         boolean nameConflict = newParent.children.stream()
+            .filter(child -> !child.equals(this))
             .anyMatch(child -> child.name.equals(this.name));
             
         if (nameConflict) {
@@ -133,12 +135,20 @@ public class Node {
             );
         }
         
-        if (this.parent != null) {
-            this.parent.removeChild(this);
-        }
+        boolean sameParent = this.parent != null && this.parent.equals(newParent);
         
-        this.parent = newParent;
-        newParent.addChildAt(this, newPosition);
+        if (sameParent) {
+            // Special handling for same-parent reordering to avoid position conflicts
+            newParent.reorderChild(this, newPosition);
+        } else {
+            // Different parent: remove from old, add to new
+            if (this.parent != null) {
+                this.parent.removeChild(this);
+            }
+            
+            this.parent = newParent;
+            newParent.addChildAt(this, newPosition);
+        }
         
         updatePathRecursively();
         markUpdated();
@@ -223,9 +233,37 @@ public class Node {
         reindexChildren();
     }
     
+    private void reorderChild(Node child, Position newPosition) {
+        if (!children.contains(child)) {
+            throw new InvalidNodeOperationException("Cannot reorder child that doesn't belong to this parent");
+        }
+        
+        int oldIndex = children.indexOf(child);
+        int newIndex = newPosition.getValue();
+        
+        if (oldIndex == newIndex) {
+            return; // Already in the correct position
+        }
+        
+        if (newIndex < 0 || newIndex >= children.size()) {
+            throw new NodeValidationException("Invalid position: " + newPosition);
+        }
+        
+        // Reorder in memory
+        children.remove(oldIndex);
+        children.add(newIndex, child);
+        
+        // Reindex to correct final positions
+        reindexChildren();
+    }
+    
     private void reindexChildren() {
+        Set<Integer> positions = new HashSet<>();
         for (int i = 0; i < children.size(); i++) {
             children.get(i).position = Position.of(i);
+            if (!positions.add(i)) {
+                throw new InvalidNodeOperationException("Duplicate position detected during reindexing");
+            }
         }
     }
     

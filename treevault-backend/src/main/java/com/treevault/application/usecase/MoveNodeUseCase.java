@@ -7,6 +7,7 @@ import com.treevault.domain.repository.NodeRepository;
 import com.treevault.domain.exception.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -19,12 +20,17 @@ public class MoveNodeUseCase {
     }
     
     public Node execute(MoveNodeCommand command) {
-        Node node = nodeRepository.findById(command.getNodeId())
+        // Load the root to ensure we have a consistent object graph
+        Node root = nodeRepository.findRootNode()
+            .orElseThrow(() -> new NodeNotFoundException("Root node not found"));
+        
+        // Find both nodes within the same object graph
+        Node node = findNodeInTree(root, command.getNodeId())
             .orElseThrow(() -> new NodeNotFoundException(
                 "Node not found: " + command.getNodeId()
             ));
         
-        Node newParent = nodeRepository.findById(command.getNewParentId())
+        Node newParent = findNodeInTree(root, command.getNewParentId())
             .orElseThrow(() -> new NodeNotFoundException(
                 "Parent node not found: " + command.getNewParentId()
             ));
@@ -32,6 +38,19 @@ public class MoveNodeUseCase {
         node.moveTo(newParent, command.getNewPosition());
         
         return nodeRepository.save(node);
+    }
+    
+    private Optional<Node> findNodeInTree(Node root, NodeId targetId) {
+        if (root.getId().equals(targetId)) {
+            return Optional.of(root);
+        }
+        for (Node child : root.getChildren()) {
+            Optional<Node> found = findNodeInTree(child, targetId);
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        return Optional.empty();
     }
     
     public static class MoveNodeCommand {

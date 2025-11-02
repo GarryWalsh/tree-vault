@@ -291,10 +291,6 @@ describe('NodeDetailsPanel', () => {
     );
 
     // Find and click the delete button on one of the tags
-    const categoryChip = screen.getByText(/category: important/i);
-    const deleteButton = categoryChip.closest('.MuiChip-root')?.querySelector('[data-testid="CancelIcon"]');
-    
-    // Alternative: use the chip itself and find delete icon
     const chips = screen.getAllByRole('button');
     const categoryChipButton = chips.find(chip => chip.textContent?.includes('category: important'));
     

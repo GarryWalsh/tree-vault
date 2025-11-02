@@ -48,64 +48,101 @@ public class NodeRepositoryAdapter implements NodeRepository {
     }
     
     @Override
+    @Transactional
     public Node save(Node node) {
-        // Persist the entire subtree rooted at this node, preserving parent linkage and positions
-        NodeJpaEntity savedRoot = persistRecursively(node, null);
-        // Reload from the true root and return the same node instance with proper parent linkage
-        return findById(node.getId()).orElseGet(() -> loadFullTree(savedRoot));
+        // Navigate up to find the root of the in-memory tree
+        // After domain operations like moveTo(), the root should have the correct state
+        Node root = node;
+        while (root.getParent().isPresent()) {
+            root = root.getParent().get();
+        }
+        
+        // Persist the entire tree from root
+        // This saves all the position changes made by domain operations
+        persistRecursively(root, null);
+        entityManager.flush();
+        
+        // Return the original node that was passed in
+        return node;
     }
     
-    private NodeJpaEntity persistRecursively(Node domainNode, NodeJpaEntity parentEntity) {
-        // Map domain to JPA entity (detached)
-        NodeJpaEntity mapped = mapper.toJpaEntity(domainNode);
+    private void persistRecursively(Node domainNode, NodeJpaEntity parentEntity) {
+        // Find existing managed entity
+        NodeJpaEntity entity = entityManager.find(NodeJpaEntity.class, domainNode.getId().getValue());
         
-        // Attach parent if provided/known
-        if (parentEntity != null) {
-            mapped.setParent(parentEntity);
-        } else if (domainNode.getParent().isPresent()) {
-            NodeJpaEntity parentFromDb = entityManager.find(NodeJpaEntity.class, domainNode.getParent().get().getId().getValue());
-            mapped.setParent(parentFromDb);
+        if (entity != null) {
+            // Update existing entity
+            entity.setName(domainNode.getName().getValue());
+            entity.setPath(domainNode.getPath().toString());
+            entity.setDepth(domainNode.getPath().getDepth());
+            if (domainNode.getPosition() != null) {
+                entity.setPosition(domainNode.getPosition().getValue());
+            }
+            entity.setUpdatedAt(LocalDateTime.now());
+            if (parentEntity != null) {
+                entity.setParent(parentEntity);
+            }
+            
+            // Sync tags
+            syncTags(domainNode, entity);
+            
+            // Recursively persist children
+            for (Node child : domainNode.getChildren()) {
+                persistRecursively(child, entity);
+            }
         } else {
-            mapped.setParent(null);
+            // Entity doesn't exist - this shouldn't happen in normal operations
+            // but we'll handle it by using the mapper to create a new entity
+            NodeJpaEntity mapped = mapper.toJpaEntity(domainNode);
+            if (parentEntity != null) {
+                mapped.setParent(parentEntity);
+            }
+            NodeJpaEntity saved = jpaRepository.save(mapped);
+            
+            // Sync tags
+            syncTags(domainNode, saved);
+            
+            // Recursively persist children
+            for (Node child : domainNode.getChildren()) {
+                persistRecursively(child, saved);
+            }
         }
+    }
+    
+    private void syncTags(Node domainNode, NodeJpaEntity entity) {
+        // Get existing tags from database
+        List<TagJpaEntity> existingTags = jpaTagRepository.findByNodeId(entity.getId());
+        Map<String, TagJpaEntity> existingTagMap = existingTags.stream()
+            .collect(Collectors.toMap(TagJpaEntity::getTagKey, t -> t));
         
-        // Find existing managed entity to avoid duplicate identifier issues
-        NodeJpaEntity saved = entityManager.find(NodeJpaEntity.class, domainNode.getId().getValue());
-        if (saved != null) {
-            // Update fields on the managed instance; keep version managed by JPA
-            saved.setName(mapped.getName());
-            saved.setType(mapped.getType());
-            saved.setPath(mapped.getPath());
-            saved.setDepth(mapped.getDepth());
-            saved.setPosition(mapped.getPosition());
-            saved.setUpdatedAt(mapped.getUpdatedAt());
-            saved.setParent(mapped.getParent());
-        } else {
-            // Persist new entity
-            saved = jpaRepository.save(mapped);
-        }
+        // Get current tags from domain
+        Map<TagKey, Tag> domainTags = domainNode.getTags();
         
-        // Replace tags for this node
-        jpaTagRepository.deleteByNodeId(saved.getId());
-        if (domainNode.getTags() != null && !domainNode.getTags().isEmpty()) {
-            for (Map.Entry<TagKey, Tag> tagEntry : domainNode.getTags().entrySet()) {
-                Tag tag = tagEntry.getValue();
-                TagJpaEntity tagEntity = TagJpaEntity.builder()
-                        .node(saved)
-                        .tagKey(tag.getKey().getValue())
-                        .tagValue(tag.getValue().getValue())
-                        .createdAt(java.time.LocalDateTime.now())
-                        .build();
-                jpaTagRepository.save(tagEntity);
+        // Add or update tags from domain
+        for (Map.Entry<TagKey, Tag> entry : domainTags.entrySet()) {
+            String key = entry.getKey().getValue();
+            String value = entry.getValue().getValue().toString();
+            
+            TagJpaEntity existingTag = existingTagMap.get(key);
+            if (existingTag != null) {
+                // Update existing tag
+                existingTag.setTagValue(value);
+                existingTagMap.remove(key);
+            } else {
+                // Create new tag
+                TagJpaEntity newTag = new TagJpaEntity();
+                newTag.setNode(entity);
+                newTag.setTagKey(key);
+                newTag.setTagValue(value);
+                newTag.setCreatedAt(LocalDateTime.now());
+                jpaTagRepository.save(newTag);
             }
         }
         
-        // Persist children in order
-        for (Node child : domainNode.getChildren()) {
-            persistRecursively(child, saved);
+        // Delete tags that no longer exist in domain
+        for (TagJpaEntity tagToDelete : existingTagMap.values()) {
+            jpaTagRepository.delete(tagToDelete);
         }
-        
-        return saved;
     }
     
     @Override

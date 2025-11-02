@@ -403,12 +403,12 @@ class NodeTest {
         @Test
         @DisplayName("Should handle node with maximum depth")
         void shouldHandleNodeWithMaximumDepth() {
-            // Given - Create deep tree structure
+            // Given - Create deep tree structure (root is at depth 0)
             Node current = Node.createRoot();
             Node root = current;
             
-            // When - Create 50 levels deep
-            for (int i = 0; i < 50; i++) {
+            // When - Create 49 levels deep (depths 1-49)
+            for (int i = 0; i < 49; i++) {
                 current = Node.createFolder(NodeName.of("level" + i), current);
             }
             
@@ -417,7 +417,7 @@ class NodeTest {
             assertThatThrownBy(() -> 
                 Node.createFolder(NodeName.of("exceed"), finalCurrent))
                 .isInstanceOf(NodeValidationException.class)
-                .hasMessageContaining("Maximum tree depth exceeded");
+                .hasMessageContaining("Maximum tree depth");
         }
         
         @Test

@@ -32,7 +32,8 @@ class DeleteNodeUseCaseTest {
     @DisplayName("Should delete node successfully")
     void shouldDeleteNodeSuccessfully() {
         // Given
-        Node node = Node.createFolder(NodeName.of("ToDelete"), null);
+        Node root = Node.createRoot();
+        Node node = Node.createFolder(NodeName.of("ToDelete"), root);
         
         when(nodeRepository.findById(node.getId())).thenReturn(Optional.of(node));
         doNothing().when(nodeRepository).delete(any(Node.class));
@@ -93,25 +94,25 @@ class DeleteNodeUseCaseTest {
         // When/Then
         assertThatThrownBy(() -> useCase.execute(root.getId()))
             .isInstanceOf(InvalidNodeOperationException.class)
-            .hasMessageContaining("Cannot delete root node with children");
+            .hasMessageContaining("Cannot delete the root node");
         
         verify(nodeRepository, never()).delete(any(Node.class));
     }
     
     @Test
-    @DisplayName("Should allow deleting root without children")
-    void shouldAllowDeletingRootWithoutChildren() {
+    @DisplayName("Should prevent deleting root without children")
+    void shouldPreventDeletingRootWithoutChildren() {
         // Given
         Node root = Node.createRoot();
         
         when(nodeRepository.findById(root.getId())).thenReturn(Optional.of(root));
-        doNothing().when(nodeRepository).delete(any(Node.class));
         
-        // When
-        useCase.execute(root.getId());
+        // When/Then
+        assertThatThrownBy(() -> useCase.execute(root.getId()))
+            .isInstanceOf(InvalidNodeOperationException.class)
+            .hasMessageContaining("Cannot delete the root node");
         
-        // Then
-        verify(nodeRepository).delete(root);
+        verify(nodeRepository, never()).delete(any(Node.class));
     }
     
     @Test

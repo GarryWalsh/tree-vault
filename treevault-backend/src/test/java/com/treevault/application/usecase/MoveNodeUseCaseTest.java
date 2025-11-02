@@ -43,8 +43,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(file.getId())).thenReturn(Optional.of(file));
-        when(nodeRepository.findById(folder2.getId())).thenReturn(Optional.of(folder2));
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> invocation.getArgument(0));
         
         // When
@@ -61,6 +60,7 @@ class MoveNodeUseCaseTest {
     @DisplayName("Should fail when node not found")
     void shouldFailWhenNodeNotFound() {
         // Given
+        Node root = Node.createRoot();
         NodeId nodeId = NodeId.generate();
         NodeId parentId = NodeId.generate();
         MoveNodeUseCase.MoveNodeCommand command = new MoveNodeUseCase.MoveNodeCommand(
@@ -69,7 +69,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(nodeId)).thenReturn(Optional.empty());
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         
         // When/Then
         assertThatThrownBy(() -> useCase.execute(command))
@@ -81,7 +81,8 @@ class MoveNodeUseCaseTest {
     @DisplayName("Should fail when parent not found")
     void shouldFailWhenParentNotFound() {
         // Given
-        Node node = Node.createFolder(NodeName.of("Node"), null);
+        Node root = Node.createRoot();
+        Node node = Node.createFolder(NodeName.of("Node"), root);
         NodeId parentId = NodeId.generate();
         MoveNodeUseCase.MoveNodeCommand command = new MoveNodeUseCase.MoveNodeCommand(
             node.getId(),
@@ -89,8 +90,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(node.getId())).thenReturn(Optional.of(node));
-        when(nodeRepository.findById(parentId)).thenReturn(Optional.empty());
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         
         // When/Then
         assertThatThrownBy(() -> useCase.execute(command))
@@ -102,7 +102,8 @@ class MoveNodeUseCaseTest {
     @DisplayName("Should prevent circular reference when moving")
     void shouldPreventCircularReferenceWhenMoving() {
         // Given
-        Node parent = Node.createFolder(NodeName.of("Parent"), null);
+        Node root = Node.createRoot();
+        Node parent = Node.createFolder(NodeName.of("Parent"), root);
         Node child = Node.createFolder(NodeName.of("Child"), parent);
         Node grandchild = Node.createFolder(NodeName.of("Grandchild"), child);
         
@@ -112,8 +113,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(parent.getId())).thenReturn(Optional.of(parent));
-        when(nodeRepository.findById(grandchild.getId())).thenReturn(Optional.of(grandchild));
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         
         // When/Then
         assertThatThrownBy(() -> useCase.execute(command))
@@ -127,7 +127,8 @@ class MoveNodeUseCaseTest {
     @DisplayName("Should prevent moving node to itself")
     void shouldPreventMovingNodeToItself() {
         // Given
-        Node node = Node.createFolder(NodeName.of("Folder"), null);
+        Node root = Node.createRoot();
+        Node node = Node.createFolder(NodeName.of("Folder"), root);
         
         MoveNodeUseCase.MoveNodeCommand command = new MoveNodeUseCase.MoveNodeCommand(
             node.getId(),
@@ -135,7 +136,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(node.getId())).thenReturn(Optional.of(node));
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         
         // When/Then
         assertThatThrownBy(() -> useCase.execute(command))
@@ -161,8 +162,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(file1.getId())).thenReturn(Optional.of(file1));
-        when(nodeRepository.findById(folder2.getId())).thenReturn(Optional.of(folder2));
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         
         // When/Then
         assertThatThrownBy(() -> useCase.execute(command))
@@ -187,8 +187,7 @@ class MoveNodeUseCaseTest {
             Position.of(0)
         );
         
-        when(nodeRepository.findById(file1.getId())).thenReturn(Optional.of(file1));
-        when(nodeRepository.findById(file2.getId())).thenReturn(Optional.of(file2));
+        when(nodeRepository.findRootNode()).thenReturn(Optional.of(root));
         
         // When/Then
         assertThatThrownBy(() -> useCase.execute(command))

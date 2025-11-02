@@ -23,8 +23,16 @@ public class DeleteNodeUseCase {
                 "Node not found: " + nodeId
             ));
         
-        node.delete();
+        // Get parent before deleting (to save reindexed positions later)
+        Node parent = node.getParent().orElse(null);
+        
+        node.delete();  // This removes the node from parent and reindexes siblings
         nodeRepository.delete(node);
+        
+        // Save parent to persist reindexed positions of remaining siblings
+        if (parent != null) {
+            nodeRepository.save(parent);
+        }
     }
 }
 

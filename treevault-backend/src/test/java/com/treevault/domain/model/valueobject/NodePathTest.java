@@ -11,9 +11,9 @@ class NodePathTest {
     @Test
     @DisplayName("Should enforce maximum depth limit")
     void shouldEnforceMaximumDepthLimit() {
-        // Given - Create path at maximum depth
+        // Given - Create path at maximum depth (root is at depth 0, so max is 49)
         NodePath path = NodePath.root();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 49; i++) {
             path = path.append(NodeName.of("level" + i));
         }
         
@@ -21,7 +21,7 @@ class NodePathTest {
         final NodePath finalPath = path; // Make effectively final for lambda
         assertThatThrownBy(() -> finalPath.append(NodeName.of("exceed")))
             .isInstanceOf(NodeValidationException.class)
-            .hasMessageContaining("Maximum tree depth exceeded");
+            .hasMessageContaining("Maximum tree depth");
     }
     
     @Test

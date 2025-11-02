@@ -31,8 +31,10 @@ public final class NodePath {
     }
     
     public NodePath append(NodeName name) {
-        if (segments.size() >= MAX_DEPTH) {
-            throw new NodeValidationException("Maximum tree depth exceeded: " + MAX_DEPTH);
+        // Check if the new node would exceed max depth
+        // MAX_DEPTH=50 means we allow depth 0-49, so prevent creating children when parent is at depth >= 49
+        if (segments.size() >= MAX_DEPTH - 1) {
+            throw new NodeValidationException("Maximum tree depth (" + (MAX_DEPTH - 1) + ") exceeded");
         }
         
         List<String> newSegments = new ArrayList<>(segments);

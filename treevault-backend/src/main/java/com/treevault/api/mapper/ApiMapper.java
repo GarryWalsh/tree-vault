@@ -30,6 +30,10 @@ public class ApiMapper {
         return toNodeResponse(node, false);
     }
     
+    public NodeResponse toNodeResponseWithChildren(Node node) {
+        return toNodeResponse(node, true);
+    }
+    
     private NodeResponse toNodeResponse(Node node, boolean includeChildren) {
         NodeResponse response = new NodeResponse();
         response.setId(node.getId().toString());

@@ -43,6 +43,7 @@ export const EnhancedTreeView: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [draggedNode, setDraggedNode] = useState<NodeResponse | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<'into' | 'before' | 'after' | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -85,6 +86,7 @@ export const EnhancedTreeView: React.FC = () => {
     if (!contextMenu) return;
 
     try {
+      console.log('Creating node:', { name, type, parentId: contextMenu.nodeId, parentName: contextMenu.nodeName });
       await nodeApi.createNode({
         name,
         type,
@@ -93,6 +95,7 @@ export const EnhancedTreeView: React.FC = () => {
       await loadTree();
       showSnackbar(`${type === 'FOLDER' ? 'Folder' : 'File'} "${name}" created successfully`, 'success');
     } catch (err: any) {
+      console.error('Create node error:', err);
       const errorDetail = err.response?.data?.detail || 'Failed to create node';
       showSnackbar(errorDetail, 'error');
     }
@@ -104,6 +107,11 @@ export const EnhancedTreeView: React.FC = () => {
     try {
       await nodeApi.updateNode(contextMenu.nodeId, newName);
       await loadTree();
+      // Update context menu with the new name to avoid stale state
+      setContextMenu({
+        ...contextMenu,
+        nodeName: newName
+      });
       showSnackbar(`Renamed to "${newName}" successfully`, 'success');
     } catch (err: any) {
       const errorDetail = err.response?.data?.detail || 'Failed to rename node';
@@ -155,10 +163,12 @@ export const EnhancedTreeView: React.FC = () => {
 
   const handleMoveNode = async (nodeId: string, newParentId: string, position: number) => {
     try {
+      console.log('Moving node:', { nodeId, newParentId, position });
       await nodeApi.moveNode(nodeId, newParentId, position);
       await loadTree();
       showSnackbar('Node moved successfully', 'success');
     } catch (err: any) {
+      console.error('Move node error:', err);
       const errorDetail = err.response?.data?.detail || 'Failed to move node';
       showSnackbar(errorDetail, 'error');
     }
@@ -170,50 +180,144 @@ export const EnhancedTreeView: React.FC = () => {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent, nodeId: string) => {
+  const handleDragOver = (e: React.DragEvent, node: NodeResponse) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggedNode && draggedNode.id !== nodeId) {
-      setDropTarget(nodeId);
-      e.dataTransfer.dropEffect = 'move';
+    
+    if (!draggedNode || draggedNode.id === node.id) {
+      return;
     }
+
+    // Get the bounding rectangle of the target element
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const mouseY = e.clientY - rect.top;
+    const elementHeight = rect.height;
+    
+    // Determine drop position based on mouse position
+    // Top 25% = before, Bottom 25% = after, Middle 50% = into (if folder)
+    const topThreshold = elementHeight * 0.25;
+    const bottomThreshold = elementHeight * 0.75;
+    
+    let position: 'into' | 'before' | 'after';
+    
+    if (mouseY < topThreshold) {
+      position = 'before';
+    } else if (mouseY > bottomThreshold) {
+      position = 'after';
+    } else if (node.type === 'FOLDER') {
+      position = 'into';
+    } else {
+      // For files, prefer before/after based on which is closer
+      position = mouseY < elementHeight / 2 ? 'before' : 'after';
+    }
+    
+    setDropTarget(node.id);
+    setDropPosition(position);
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDropTarget(null);
+    setDropPosition(null);
   };
 
-  const handleDrop = async (e: React.DragEvent, targetNode: NodeResponse) => {
+  const handleDrop = async (e: React.DragEvent, targetNode: NodeResponse, parentNode: NodeResponse | null) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    const currentDropPosition = dropPosition;
     setDropTarget(null);
+    setDropPosition(null);
+
+    console.log('Drop event:', { 
+      draggedNode: draggedNode ? { id: draggedNode.id, name: draggedNode.name, type: draggedNode.type } : null,
+      targetNode: { id: targetNode.id, name: targetNode.name, type: targetNode.type },
+      dropPosition: currentDropPosition,
+      parentNode: parentNode ? { id: parentNode.id, name: parentNode.name } : null
+    });
 
     if (!draggedNode || draggedNode.id === targetNode.id) {
+      console.log('Drop cancelled: no dragged node or same node');
       setDraggedNode(null);
       return;
     }
 
-    // Can only drop into folders
-    if (targetNode.type !== 'FOLDER') {
-      showSnackbar('Can only move nodes into folders', 'error');
+    try {
+      if (currentDropPosition === 'into') {
+        // Drop INTO folder
+        if (targetNode.type !== 'FOLDER') {
+          console.log('Drop rejected: target is not a folder');
+          showSnackbar('Can only move nodes into folders', 'error');
+          setDraggedNode(null);
+          return;
+        }
+
+        // Prevent dropping a folder into itself or its descendants
+        if (isDescendant(draggedNode, targetNode)) {
+          console.log('Drop rejected: circular reference detected');
+          showSnackbar('Cannot move a folder into itself or its descendants', 'error');
+          setDraggedNode(null);
+          return;
+        }
+
+        // Calculate position (append to end)
+        const position = targetNode.children ? targetNode.children.length : 0;
+        console.log('Proceeding with move INTO folder, position:', position);
+
+        await handleMoveNode(draggedNode.id, targetNode.id, position);
+      } else if (currentDropPosition === 'before' || currentDropPosition === 'after') {
+        // Drop BEFORE or AFTER sibling (reordering)
+        if (!parentNode) {
+          console.log('Drop rejected: no parent node for sibling reordering');
+          showSnackbar('Cannot reorder root level nodes', 'error');
+          setDraggedNode(null);
+          return;
+        }
+
+        // Prevent dropping a folder into its own descendant
+        if (isDescendant(draggedNode, parentNode)) {
+          console.log('Drop rejected: cannot move to descendant');
+          showSnackbar('Cannot move a folder into its own descendant', 'error');
+          setDraggedNode(null);
+          return;
+        }
+
+        // Find target node position in parent's children
+        const targetIndex = parentNode.children?.findIndex(child => child.id === targetNode.id) ?? -1;
+        
+        if (targetIndex === -1) {
+          console.log('Drop rejected: target not found in parent children');
+          showSnackbar('Failed to determine drop position', 'error');
+          setDraggedNode(null);
+          return;
+        }
+
+        // Calculate new position
+        let newPosition = currentDropPosition === 'before' ? targetIndex : targetIndex + 1;
+        
+        // If moving within same parent, adjust for removal of dragged node
+        if (draggedNode.parentId === parentNode.id) {
+          const draggedIndex = parentNode.children?.findIndex(child => child.id === draggedNode.id) ?? -1;
+          if (draggedIndex !== -1 && draggedIndex < newPosition) {
+            newPosition--;
+          }
+        }
+
+        console.log('Proceeding with sibling reorder:', {
+          draggedNode: draggedNode.name,
+          targetNode: targetNode.name,
+          position: currentDropPosition,
+          newPosition,
+          parentId: parentNode.id
+        });
+
+        await handleMoveNode(draggedNode.id, parentNode.id, newPosition);
+      }
+    } finally {
       setDraggedNode(null);
-      return;
     }
-
-    // Prevent dropping a folder into itself or its descendants
-    if (isDescendant(draggedNode, targetNode)) {
-      showSnackbar('Cannot move a folder into itself or its descendants', 'error');
-      setDraggedNode(null);
-      return;
-    }
-
-    // Calculate position (append to end)
-    const position = targetNode.children ? targetNode.children.length : 0;
-
-    await handleMoveNode(draggedNode.id, targetNode.id, position);
-    setDraggedNode(null);
   };
 
   const isDescendant = (parent: NodeResponse, potentialDescendant: NodeResponse): boolean => {
@@ -238,51 +342,96 @@ export const EnhancedTreeView: React.FC = () => {
     return findNodeById(tree.root, selectedNodeId);
   };
 
-  const renderNode = (node: NodeResponse): JSX.Element => (
-    <TreeItem
-      key={node.id}
-      itemId={node.id}
-      label={
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            backgroundColor: dropTarget === node.id ? 'action.hover' : 'transparent',
-            transition: 'background-color 0.2s',
-            cursor: 'grab',
-            '&:active': {
-              cursor: 'grabbing',
-            },
-          }}
-          draggable
-          onDragStart={(e) => handleDragStart(e, node)}
-          onDragOver={(e) => handleDragOver(e, node.id)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, node)}
-        >
-          {node.type === 'FOLDER' ? <Folder /> : <InsertDriveFile />}
-          <span>{node.name}</span>
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              setContextMenu({
-                nodeId: node.id,
-                nodeName: node.name,
-                nodeType: node.type,
-                anchorEl: e.currentTarget,
-              });
-            }}
-          >
-            <MoreVert fontSize="small" />
-          </IconButton>
-        </Box>
-      }
-    >
-      {node.children?.map(renderNode)}
-    </TreeItem>
-  );
+  const renderNode = (node: NodeResponse, parentNode: NodeResponse | null = null): JSX.Element => {
+    const isDropTarget = dropTarget === node.id;
+    const showDropBefore = isDropTarget && dropPosition === 'before';
+    const showDropAfter = isDropTarget && dropPosition === 'after';
+    const showDropInto = isDropTarget && dropPosition === 'into';
+
+    return (
+      <TreeItem
+        key={node.id}
+        itemId={node.id}
+        label={
+          <Box sx={{ position: 'relative' }}>
+            {/* Drop indicator - BEFORE */}
+            {showDropBefore && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -2,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  backgroundColor: 'primary.main',
+                  borderRadius: 1,
+                  zIndex: 1000,
+                }}
+              />
+            )}
+
+            {/* Main node content */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: showDropInto ? 'primary.light' : 'transparent',
+                borderRadius: 1,
+                transition: 'background-color 0.2s',
+                cursor: 'grab',
+                padding: '4px 8px',
+                position: 'relative',
+                '&:active': {
+                  cursor: 'grabbing',
+                },
+              }}
+              draggable
+              onDragStart={(e) => handleDragStart(e, node)}
+              onDragOver={(e) => handleDragOver(e, node)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, node, parentNode)}
+            >
+              {node.type === 'FOLDER' ? <Folder /> : <InsertDriveFile />}
+              <span>{node.name}</span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContextMenu({
+                    nodeId: node.id,
+                    nodeName: node.name,
+                    nodeType: node.type,
+                    anchorEl: e.currentTarget,
+                  });
+                }}
+              >
+                <MoreVert fontSize="small" />
+              </IconButton>
+            </Box>
+
+            {/* Drop indicator - AFTER */}
+            {showDropAfter && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: -2,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  backgroundColor: 'primary.main',
+                  borderRadius: 1,
+                  zIndex: 1000,
+                }}
+              />
+            )}
+          </Box>
+        }
+      >
+        {node.children?.map(child => renderNode(child, node))}
+      </TreeItem>
+    );
+  };
 
   if (loading) {
     return (
@@ -374,7 +523,7 @@ export const EnhancedTreeView: React.FC = () => {
                 }
               }}
             >
-              {renderNode(tree.root)}
+              {renderNode(tree.root, null)}
             </SimpleTreeView>
           </Paper>
         </Grid>
@@ -397,24 +546,57 @@ export const EnhancedTreeView: React.FC = () => {
       >
         <MenuItem
           onClick={() => {
+            // Get fresh node data from the tree before opening dialog
+            if (contextMenu && tree) {
+              const currentNode = findNodeById(tree.root, contextMenu.nodeId);
+              if (currentNode) {
+                setContextMenu({
+                  nodeId: currentNode.id,
+                  nodeName: currentNode.name,
+                  nodeType: currentNode.type,
+                  anchorEl: null
+                });
+              }
+            }
             setCreateDialogOpen(true);
-            setContextMenu({ ...contextMenu!, anchorEl: null });
           }}
         >
           Create Child Node
         </MenuItem>
         <MenuItem
           onClick={() => {
+            // Get fresh node data from the tree before opening dialog
+            if (contextMenu && tree) {
+              const currentNode = findNodeById(tree.root, contextMenu.nodeId);
+              if (currentNode) {
+                setContextMenu({
+                  nodeId: currentNode.id,
+                  nodeName: currentNode.name,
+                  nodeType: currentNode.type,
+                  anchorEl: null
+                });
+              }
+            }
             setRenameDialogOpen(true);
-            setContextMenu({ ...contextMenu!, anchorEl: null });
           }}
         >
           Rename
         </MenuItem>
         <MenuItem
           onClick={() => {
+            // Get fresh node data from the tree before opening dialog
+            if (contextMenu && tree) {
+              const currentNode = findNodeById(tree.root, contextMenu.nodeId);
+              if (currentNode) {
+                setContextMenu({
+                  nodeId: currentNode.id,
+                  nodeName: currentNode.name,
+                  nodeType: currentNode.type,
+                  anchorEl: null
+                });
+              }
+            }
             setDeleteDialogOpen(true);
-            setContextMenu({ ...contextMenu!, anchorEl: null });
           }}
         >
           Delete

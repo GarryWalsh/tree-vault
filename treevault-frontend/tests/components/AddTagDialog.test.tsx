@@ -280,7 +280,7 @@ describe('AddTagDialog', () => {
     const mockOnClose = vi.fn();
     const mockOnAdd = vi.fn();
 
-    const { rerender } = render(
+    render(
       <AddTagDialog
         open={true}
         onClose={mockOnClose}

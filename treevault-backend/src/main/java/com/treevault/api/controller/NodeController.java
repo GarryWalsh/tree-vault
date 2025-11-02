@@ -70,7 +70,7 @@ public class NodeController {
     public NodeResponse getNode(
             @Parameter(description = "Node UUID", required = true) @PathVariable UUID id) {
         var node = getTreeUseCase.getNode(NodeId.of(id));
-        return apiMapper.toNodeResponse(node);
+        return apiMapper.toNodeResponseWithChildren(node);
     }
     
     @PostMapping("/nodes")

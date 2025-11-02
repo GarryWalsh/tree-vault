@@ -133,9 +133,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    // Check that the error icon is rendered (it's a MUI ErrorIcon)
-    const errorIcon = document.querySelector('[data-testid="ErrorIcon"]');
-    // If the icon doesn't have a test id, we can check for the presence of the error UI
+    // Check that the error UI is rendered
     expect(screen.getByText('Oops! Something went wrong')).toBeInTheDocument();
   });
 
