@@ -1,0 +1,38 @@
+# IDE and editor settings
+.idea/
+.vscode/
+*.iml
+
+# Cursor / tooling metadata
+.cursor/
+
+# OS-generated files
+Thumbs.db
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*.local
+
+# Logs
+*.log
+logs/
+treevault-backend/logs/
+
+# Build output - backend (Maven)
+treevault-backend/target/
+
+# Build output - frontend (Node/Vite)
+treevault-frontend/node_modules/
+treevault-frontend/dist/
+treevault-frontend/.vite/
+treevault-frontend/*.tsbuildinfo
+
+# Coverage / test artifacts
+coverage/
+.nyc_output/
+
+# Misc
+*.dumpstream
+
+

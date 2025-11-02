@@ -1,0 +1,33 @@
+package com.treevault.application.usecase;
+
+import com.treevault.domain.model.entity.Node;
+import com.treevault.domain.repository.NodeRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional(readOnly = true)
+public class GetTreeUseCase {
+    
+    private final NodeRepository nodeRepository;
+    
+    public GetTreeUseCase(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
+    }
+    
+    public Node execute() {
+        return nodeRepository.findRootNode()
+            .orElseGet(() -> {
+                Node root = Node.createRoot();
+                return nodeRepository.save(root);
+            });
+    }
+    
+    public Node getNode(com.treevault.domain.model.valueobject.NodeId nodeId) {
+        return nodeRepository.findById(nodeId)
+            .orElseThrow(() -> new com.treevault.domain.exception.NodeNotFoundException(
+                "Node not found: " + nodeId
+            ));
+    }
+}
+
