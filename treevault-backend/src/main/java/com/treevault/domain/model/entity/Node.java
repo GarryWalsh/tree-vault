@@ -1,9 +1,26 @@
 package com.treevault.domain.model.entity;
 
-import com.treevault.domain.model.valueobject.*;
-import com.treevault.domain.exception.*;
+import com.treevault.domain.model.valueobject.NodeId;
+import com.treevault.domain.model.valueobject.NodeName;
+import com.treevault.domain.model.valueobject.NodePath;
+import com.treevault.domain.model.valueobject.NodeType;
+import com.treevault.domain.model.valueobject.Position;
+import com.treevault.domain.model.valueobject.TagKey;
+import com.treevault.domain.model.valueobject.TagValue;
+import com.treevault.domain.exception.CircularReferenceException;
+import com.treevault.domain.exception.InvalidNodeOperationException;
+import com.treevault.domain.exception.NodeNotFoundException;
+import com.treevault.domain.exception.NodeValidationException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 public class Node {
     private final NodeId id;

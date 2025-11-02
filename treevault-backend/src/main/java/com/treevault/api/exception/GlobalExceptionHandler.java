@@ -36,7 +36,6 @@ public class GlobalExceptionHandler {
      * URI.create() never returns null - it throws IllegalArgumentException for invalid URIs.
      * This method wraps the call with Objects.requireNonNull to satisfy null-safety checkers.
      */
-    @SuppressWarnings("null")
     private URI createUri(String uriString) {
         return Objects.requireNonNull(URI.create(uriString), "URI cannot be null");
     }

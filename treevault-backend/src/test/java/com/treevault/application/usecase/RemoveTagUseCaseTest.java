@@ -1,9 +1,14 @@
 package com.treevault.application.usecase;
 
 import com.treevault.domain.model.entity.Node;
-import com.treevault.domain.model.valueobject.*;
+import com.treevault.domain.model.valueobject.NodeId;
+import com.treevault.domain.model.valueobject.NodeName;
+import com.treevault.domain.model.valueobject.NodeType;
+import com.treevault.domain.model.valueobject.TagKey;
+import com.treevault.domain.model.valueobject.TagValue;
 import com.treevault.domain.repository.NodeRepository;
-import com.treevault.domain.exception.*;
+import com.treevault.domain.exception.NodeNotFoundException;
+import com.treevault.domain.exception.NodeValidationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,9 +16,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RemoveTagUseCaseTest {

@@ -1,11 +1,13 @@
 package com.treevault.domain.service;
 
-import com.treevault.domain.model.valueobject.*;
+import com.treevault.domain.model.valueobject.NodeName;
+import com.treevault.domain.model.valueobject.NodePath;
 import com.treevault.domain.exception.NodeValidationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PathCalculationServiceTest {
     

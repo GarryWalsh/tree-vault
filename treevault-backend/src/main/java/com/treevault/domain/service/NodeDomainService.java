@@ -1,6 +1,5 @@
 package com.treevault.domain.service;
 
-import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.model.valueobject.NodeName;
 import com.treevault.domain.repository.NodeRepository;

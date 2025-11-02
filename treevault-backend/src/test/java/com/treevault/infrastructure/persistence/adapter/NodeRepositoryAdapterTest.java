@@ -1,7 +1,12 @@
 package com.treevault.infrastructure.persistence.adapter;
 
 import com.treevault.domain.model.entity.Node;
-import com.treevault.domain.model.valueobject.*;
+import com.treevault.domain.model.valueobject.NodeId;
+import com.treevault.domain.model.valueobject.NodeName;
+import com.treevault.domain.model.valueobject.NodeType;
+import com.treevault.domain.model.valueobject.Position;
+import com.treevault.domain.model.valueobject.TagKey;
+import com.treevault.domain.model.valueobject.TagValue;
 import com.treevault.domain.repository.NodeRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +19,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.springframework.transaction.annotation.Transactional;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Testcontainers

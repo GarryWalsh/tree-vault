@@ -2,9 +2,9 @@
 FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 COPY pom.xml .
-RUN mvn dependency:go-offline
+RUN mvn dependency:go-offline -T 1C
 COPY src src
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -T 1C
 
 FROM maven:3.9-eclipse-temurin-21 AS test
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY src src
 # Or use WSL2 where socket is at /var/run/docker.sock
 ARG DOCKER_HOST
 ENV DOCKER_HOST=${DOCKER_HOST}
-RUN mvn clean test
+RUN mvn clean test -T 1C
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

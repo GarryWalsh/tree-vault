@@ -1,6 +1,9 @@
 package com.treevault.api.exception;
 
-import com.treevault.domain.exception.*;
+import com.treevault.domain.exception.CircularReferenceException;
+import com.treevault.domain.exception.InvalidNodeOperationException;
+import com.treevault.domain.exception.NodeNotFoundException;
+import com.treevault.domain.exception.NodeValidationException;
 import com.treevault.domain.model.valueobject.NodeId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -11,7 +14,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import java.net.URI;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GlobalExceptionHandlerTest {
     

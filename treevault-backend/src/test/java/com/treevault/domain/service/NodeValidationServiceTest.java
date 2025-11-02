@@ -1,12 +1,16 @@
 package com.treevault.domain.service;
 
 import com.treevault.domain.model.entity.Node;
-import com.treevault.domain.model.valueobject.*;
-import com.treevault.domain.exception.*;
+import com.treevault.domain.model.valueobject.NodeName;
+import com.treevault.domain.model.valueobject.NodeType;
+import com.treevault.domain.model.valueobject.Position;
+import com.treevault.domain.exception.CircularReferenceException;
+import com.treevault.domain.exception.InvalidNodeOperationException;
+import com.treevault.domain.exception.NodeValidationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class NodeValidationServiceTest {
     

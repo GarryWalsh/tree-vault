@@ -1,18 +1,13 @@
 package com.treevault.api.mapper;
 
 import com.treevault.api.dto.request.CreateNodeRequest;
-import com.treevault.api.dto.request.TagRequest;
 import com.treevault.api.dto.response.NodeResponse;
 import com.treevault.api.dto.response.TagResponse;
 import com.treevault.api.dto.response.TreeResponse;
 import com.treevault.application.usecase.CreateNodeUseCase;
-import com.treevault.application.usecase.MoveNodeUseCase;
 import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.entity.Tag;
-import com.treevault.domain.model.valueobject.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.ReportingPolicy;
+import com.treevault.domain.model.valueobject.NodeId;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
