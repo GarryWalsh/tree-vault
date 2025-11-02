@@ -1,6 +1,8 @@
 package com.treevault.application.usecase;
 
+import com.treevault.domain.exception.NodeNotFoundException;
 import com.treevault.domain.model.entity.Node;
+import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.repository.NodeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +25,9 @@ public class GetTreeUseCase {
             });
     }
     
-    public Node getNode(com.treevault.domain.model.valueobject.NodeId nodeId) {
+    public Node getNode(NodeId nodeId) {
         return nodeRepository.findById(nodeId)
-            .orElseThrow(() -> new com.treevault.domain.exception.NodeNotFoundException(
+            .orElseThrow(() -> new NodeNotFoundException(
                 "Node not found: " + nodeId
             ));
     }

@@ -1,6 +1,6 @@
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Container, Box, Typography } from '@mui/material';
-import { TreeView } from './components/tree/TreeView';
+import { EnhancedTreeView } from './components/tree/EnhancedTreeView';
 
 const theme = createTheme({
   palette: {
@@ -15,12 +15,15 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Container maxWidth="lg">
+      <Container maxWidth="xl">
         <Box sx={{ py: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            TreeVault File Manager
+          <Typography variant="h3" gutterBottom align="center" sx={{ mb: 4 }}>
+            🗂️ TreeVault
           </Typography>
-          <TreeView />
+          <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary" sx={{ mb: 4 }}>
+            Hierarchical File Manager with Tag Support
+          </Typography>
+          <EnhancedTreeView />
         </Box>
       </Container>
     </ThemeProvider>

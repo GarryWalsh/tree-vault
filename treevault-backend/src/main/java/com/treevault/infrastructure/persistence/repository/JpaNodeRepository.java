@@ -20,4 +20,3 @@ public interface JpaNodeRepository extends JpaRepository<NodeJpaEntity, UUID> {
 
     Optional<NodeJpaEntity> findByParentIdIsNullAndName(String name);
 }
-

@@ -2,89 +2,107 @@
 
 Simple guide to run the app. No fluff.
 
-## 1) Run with Docker (recommended)
+## Quick Start
 
-Prereqs: Docker Desktop + Docker Compose.
+**Prerequisites:**
+- Docker Desktop
+- Docker Compose
 
-1. In project root, create `.env`:
-```env
-DB_NAME=treevault
-DB_USER=treevault
-DB_PASSWORD=treevault
-```
-2. Start:
+**Setup Steps:**
+
+1. **Create environment file:**
+   
+   Copy `.env.example` to `.env` in the project root:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Or on Windows PowerShell:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+   
+   The default values work fine. Edit `.env` only if you want custom database credentials.
+
+2. **Start all services:**
+   ```bash
+   docker-compose up -d
+   ```
+   
+   **What happens on startup:**
+   - PostgreSQL database starts with an empty database
+   - Backend waits for database to be ready (health check)
+   - Flyway automatically runs all migrations to create tables and schema
+   - Frontend starts after backend is healthy
+
+3. **Access the application:**
+   - **Frontend:** http://localhost:3000
+   - **API Base:** http://localhost:8080/api/v1
+   - **API Docs:** http://localhost:8080/swagger-ui/index.html
+   - **Health Check:** http://localhost:8080/actuator/health
+
+## Managing the Application
+
+**View logs:**
 ```bash
-docker-compose up -d
-```
-3. Open:
-- Frontend: http://localhost:3000
-- API base: http://localhost:8080/api/v1
-- API docs: http://localhost:8080/swagger-ui/index.html
-- Health: http://localhost:8080/actuator/health
+# All services
+docker-compose logs -f
 
-Stop:
+# Specific service
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f postgres
+```
+
+**Stop services:**
 ```bash
 docker-compose down
 ```
 
-## 2) Run locally (backend + frontend)
-
-Prereqs: Java 21, Maven, Node 18+, npm.
-
-Database (choose one):
-- Docker: `docker run --name treevault-db -e POSTGRES_DB=treevault -e POSTGRES_USER=treevault -e POSTGRES_PASSWORD=treevault -p 5432:5432 -d postgres:16-alpine`
-- Or use the `postgres` service from `docker-compose.yml` and keep only DB running.
-
-Backend:
+**Clean everything (including database data):**
 ```bash
-cd treevault-backend
-set SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/treevault
-set SPRING_DATASOURCE_USERNAME=treevault
-set SPRING_DATASOURCE_PASSWORD=treevault
-mvn spring-boot:run
+docker-compose down -v
 ```
 
-Frontend (new terminal):
+**Rebuild after code changes:**
 ```bash
-cd treevault-frontend
-npm install
-# IMPORTANT: frontend adds "/api/v1" itself
-set VITE_API_URL=http://localhost:8080
-npm run dev
+docker-compose up -d --build
 ```
-Open http://localhost:3000
 
-## 3) Run tests
+## Run Tests
 
-Backend:
-- Unit tests (fast, no Docker needed):
+**Backend tests:**
 ```bash
 cd treevault-backend
+
+# Unit tests (fast, no Docker needed)
 mvn clean test
-```
-- Integration/E2E tests (Docker + Testcontainers required):
-```bash
-cd treevault-backend
+
+# Integration/E2E tests (requires Docker + Testcontainers)
 mvn clean verify
 ```
 
-Frontend:
+**Frontend tests:**
 ```bash
 cd treevault-frontend
 npm test -- --run
 ```
 
-## 4) IntelliJ IDEA run configs
+## Troubleshooting
 
-Available under `.idea/runConfigurations`:
-- Backend - All Tests (Maven `clean test`)
-- Frontend - All Tests (NPM `test -- --run`)
-- All Tests (Compound)
-- Backend - Run (Maven `spring-boot:run`)
-- Frontend - Dev (NPM `run dev`)
-- Start App (Compound)
+**Frontend shows 404 errors:**
+- The frontend is configured to call `http://localhost:8080/api/v1`
+- Check if backend is running: `docker-compose logs backend`
 
-## Troubleshooting (quick)
-- Frontend 404s → ensure `VITE_API_URL=http://localhost:8080` (no `/api/v1`).
-- Backend fails to start → Postgres running? Env vars correct?
-- Ports busy → free 8080/3000/5432 or change in `docker-compose.yml`.
+**Backend fails to start:**
+- Check if `.env` file exists with DB credentials
+- View backend logs: `docker-compose logs backend`
+- Verify Postgres is healthy: `docker-compose ps`
+
+**Ports already in use:**
+- Check what's using ports 3000, 8080, or 5432
+- Stop conflicting services or change ports in `docker-compose.yml`
+
+**Database issues:**
+- Clean and restart: `docker-compose down -v && docker-compose up -d`
+- This removes all data and recreates the database from scratch
