@@ -108,10 +108,10 @@ docker-compose up -d --build
 cd treevault-backend
 
 # Unit tests only (fast, no Docker)
-mvn test
+mvn clean test
 
 # All tests including integration (requires Docker for Testcontainers)
-mvn verify
+mvn clean verify
 ```
 
 **Frontend:**
@@ -122,7 +122,7 @@ cd treevault-frontend
 npm test
 
 # Watch mode for development
-npm test -- --watch
+npm test --watch
 ```
 
 ---
@@ -253,7 +253,7 @@ Tree data fetched from backend on demand, not cached globally.
 
 4. **Backend-Driven Validation**: Frontend performs zero business validation. All rules enforced server-side, frontend displays backend error messages directly.
 
-5. **Optimistic Updates Avoided**: No local state mutations before server confirmation. Tree refetches after successful operations to maintain single source of truth.
+5. **Optimistic Updates Avoided**: No local state mutations before server confirmation.
 
 6. **Context Menu Pattern**: Right-click menu for all node operations. Familiar desktop-like UX for file management.
 
@@ -338,7 +338,7 @@ Infrastructure Layer (JPA Repositories, Adapters)
 
 6. **MapStruct DTOs**: Compile-time DTO mapping eliminates reflection overhead. Clear separation between domain entities and API contracts.
 
-7. **RFC 9457 Problem Details**: Standardized error responses with machine-readable `type` URIs and human-readable `detail` messages.
+7. **RFC 7807 & 9457 Problem Details**: Standardized error responses with machine-readable `type` URIs and human-readable `detail` messages.
 
 8. **Tag Validation**: Domain enforces tag key format (`^[a-zA-Z0-9_-]+$`, max 100 chars) and value constraints (max 500 chars). Business rules live in domain layer, not database.
 

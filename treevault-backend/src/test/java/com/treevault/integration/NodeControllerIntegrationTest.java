@@ -33,8 +33,9 @@ class NodeControllerIntegrationTest extends BaseIntegrationTest {
     @AfterEach
     void cleanupDatabase() {
         // Clean up test data to prevent test pollution
+        // Delete all nodes to ensure clean state for next test
         jdbcTemplate.execute("DELETE FROM tags");
-        jdbcTemplate.execute("DELETE FROM nodes WHERE name != 'root'");
+        jdbcTemplate.execute("DELETE FROM nodes");
     }
 
     @Test

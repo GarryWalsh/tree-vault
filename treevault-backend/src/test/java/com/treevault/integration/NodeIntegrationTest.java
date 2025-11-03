@@ -4,6 +4,7 @@ import com.treevault.api.dto.request.CreateNodeRequest;
 import com.treevault.api.dto.response.NodeResponse;
 import com.treevault.api.dto.response.TreeResponse;
 import com.treevault.domain.model.valueobject.NodeType;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,14 @@ import java.net.URI;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class NodeIntegrationTest extends BaseIntegrationTest {
+    
+    @AfterEach
+    void cleanupDatabase() {
+        // Clean up test data to prevent test pollution
+        // Delete all nodes to ensure clean state for next test
+        jdbcTemplate.execute("DELETE FROM tags");
+        jdbcTemplate.execute("DELETE FROM nodes");
+    }
     
     @Test
     void shouldCreateAndRetrieveNode() {

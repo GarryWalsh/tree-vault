@@ -6,6 +6,7 @@ import com.treevault.api.dto.request.MoveNodeRequest;
 import com.treevault.api.dto.response.NodeResponse;
 import com.treevault.api.dto.response.TreeResponse;
 import com.treevault.domain.model.valueobject.NodeType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.http.HttpEntity;
@@ -22,6 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class TreeOperationsE2ETest extends BaseIntegrationTest {
+    
+    @BeforeEach
+    void cleanupDatabase() {
+        // Clean up test data before each test to prevent test pollution
+        // This ensures each test starts with a clean database state
+        jdbcTemplate.execute("DELETE FROM tags");
+        jdbcTemplate.execute("DELETE FROM nodes");
+    }
     
     @Test
     @DisplayName("Should perform complete tree operations end-to-end")
