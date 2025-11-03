@@ -36,7 +36,7 @@ Hierarchical file management system with tag support. Spring Boot backend with C
    DB_PASSWORD=treevault123
    ```
    
-   These environment variables are **required**. Docker Compose will fail to start without them.
+   These environment variables are **required**. Docker Compose will fail to start without them. Choose secure credentials for production.
 
 2. **Start all services:**
    ```bash
