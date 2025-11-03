@@ -1,5 +1,6 @@
 package com.treevault.domain.service;
 
+import com.treevault.BaseUnitTest;
 import com.treevault.domain.model.valueobject.NodeName;
 import com.treevault.domain.model.valueobject.NodePath;
 import com.treevault.domain.exception.NodeValidationException;
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class PathCalculationServiceTest {
+class PathCalculationServiceTest extends BaseUnitTest {
     
     private PathCalculationService service;
     

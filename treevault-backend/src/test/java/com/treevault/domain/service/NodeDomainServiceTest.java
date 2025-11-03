@@ -1,5 +1,6 @@
 package com.treevault.domain.service;
 
+import com.treevault.BaseUnitTest;
 import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.model.valueobject.NodeName;
 import com.treevault.domain.repository.NodeRepository;
@@ -7,9 +8,7 @@ import com.treevault.domain.exception.InvalidNodeOperationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,8 +16,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class NodeDomainServiceTest {
+class NodeDomainServiceTest extends BaseUnitTest {
     
     @Mock
     private NodeRepository nodeRepository;

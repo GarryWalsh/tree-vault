@@ -1,5 +1,6 @@
 package com.treevault.domain.service;
 
+import com.treevault.BaseUnitTest;
 import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.valueobject.NodeName;
 import com.treevault.domain.exception.CircularReferenceException;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class NodeValidationServiceTest {
+class NodeValidationServiceTest extends BaseUnitTest {
     
     private NodeValidationService service;
     

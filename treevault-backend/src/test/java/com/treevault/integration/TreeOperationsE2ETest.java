@@ -8,10 +8,6 @@ import com.treevault.api.dto.response.TreeResponse;
 import com.treevault.domain.model.valueobject.NodeType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -19,26 +15,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class TreeOperationsE2ETest {
-
-    @LocalServerPort
-    private int port;
-    
-    @Autowired
-    private TestRestTemplate restTemplate;
-    
-    private String getBaseUrl() {
-        return "http://localhost:" + port + "/api/v1";
-    }
+class TreeOperationsE2ETest extends BaseIntegrationTest {
     
     @Test
     @DisplayName("Should perform complete tree operations end-to-end")
@@ -76,13 +59,11 @@ class TreeOperationsE2ETest {
         fileRequest.setType(NodeType.FILE);
         fileRequest.setParentId(folderId);
         
-        ResponseEntity<NodeResponse> fileResponse = restTemplate.postForEntity(
+        restTemplate.postForEntity(
             getBaseUrl() + "/nodes",
             fileRequest,
             NodeResponse.class
         );
-        
-        String fileId = fileResponse.getBody().getId();
         
         // Then - Verify tree structure
         ResponseEntity<TreeResponse> treeResponse = restTemplate.getForEntity(
@@ -1337,8 +1318,8 @@ class TreeOperationsE2ETest {
         String rootId = initialTree.getBody().getRoot().getId();
         
         String firstId = createFolder("First", rootId);
-        String secondId = createFolder("Second", rootId);
-        String thirdId = createFolder("Third", rootId);
+        createFolder("Second", rootId);
+        createFolder("Third", rootId);
         
         // When - Move First to end (position 2)
         MoveNodeRequest moveRequest = new MoveNodeRequest();
@@ -1421,9 +1402,9 @@ class TreeOperationsE2ETest {
         String rootId = initialTree.getBody().getRoot().getId();
         
         String aId = createFolder("A", rootId);
-        String bId = createFolder("B", rootId);
+        createFolder("B", rootId);
         String cId = createFolder("C", rootId);
-        String dId = createFolder("D", rootId);
+        createFolder("D", rootId);
         String eId = createFolder("E", rootId);
         
         // When - Perform multiple reordering operations
@@ -1461,10 +1442,10 @@ class TreeOperationsE2ETest {
         );
         String rootId = initialTree.getBody().getRoot().getId();
         
-        String folder1Id = createFolder("FolderA", rootId);
+        createFolder("FolderA", rootId);
         String file1Id = createFile("file1.txt", rootId);
-        String folder2Id = createFolder("FolderB", rootId);
-        String file2Id = createFile("file2.txt", rootId);
+        createFolder("FolderB", rootId);
+        createFile("file2.txt", rootId);
         
         // When - Move file1 to end
         moveNode(file1Id, rootId, 3);
@@ -1493,11 +1474,11 @@ class TreeOperationsE2ETest {
         );
         String rootId = initialTree.getBody().getRoot().getId();
         
-        String aId = createFolder("A", rootId);
-        String bId = createFolder("B", rootId);
+        createFolder("A", rootId);
+        createFolder("B", rootId);
         String cId = createFolder("C", rootId);
-        String dId = createFolder("D", rootId);
-        String eId = createFolder("E", rootId);
+        createFolder("D", rootId);
+        createFolder("E", rootId);
         
         // When - Delete C (middle element)
         restTemplate.delete(getBaseUrl() + "/nodes/" + cId);
@@ -1532,10 +1513,10 @@ class TreeOperationsE2ETest {
         );
         String rootId = initialTree.getBody().getRoot().getId();
         
-        String aId = createFolder("A", rootId);
-        String bId = createFolder("B", rootId);
+        createFolder("A", rootId);
+        createFolder("B", rootId);
         String cId = createFolder("C", rootId);
-        String dId = createFolder("D", rootId);
+        createFolder("D", rootId);
         
         // When - Swap B and C (move C to position 1)
         moveNode(cId, rootId, 1);

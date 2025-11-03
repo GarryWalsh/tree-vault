@@ -1,15 +1,14 @@
 package com.treevault.application.usecase;
 
+import com.treevault.BaseUnitTest;
 import com.treevault.domain.exception.NodeNotFoundException;
 import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.repository.NodeRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -22,8 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class GetTreeUseCaseTest {
+class GetTreeUseCaseTest extends BaseUnitTest {
 
     @Mock
     private NodeRepository nodeRepository;
