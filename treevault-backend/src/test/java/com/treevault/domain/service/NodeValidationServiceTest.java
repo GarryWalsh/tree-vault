@@ -2,8 +2,6 @@ package com.treevault.domain.service;
 
 import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.valueobject.NodeName;
-import com.treevault.domain.model.valueobject.NodeType;
-import com.treevault.domain.model.valueobject.Position;
 import com.treevault.domain.exception.CircularReferenceException;
 import com.treevault.domain.exception.InvalidNodeOperationException;
 import com.treevault.domain.exception.NodeValidationException;

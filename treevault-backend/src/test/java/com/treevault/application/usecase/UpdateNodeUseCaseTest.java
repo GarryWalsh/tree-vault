@@ -3,7 +3,6 @@ package com.treevault.application.usecase;
 import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.model.valueobject.NodeName;
-import com.treevault.domain.model.valueobject.NodeType;
 import com.treevault.domain.repository.NodeRepository;
 import com.treevault.domain.exception.InvalidNodeOperationException;
 import com.treevault.domain.exception.NodeNotFoundException;

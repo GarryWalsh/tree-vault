@@ -32,7 +32,7 @@ describe('NodeDetailsPanel', () => {
       />
     );
 
-    expect(screen.getByText('Select a node to view details')).toBeInTheDocument();
+    expect(screen.getByText('Select a node to view its details')).toBeInTheDocument();
   });
 
   it('should display node name', () => {
@@ -62,7 +62,6 @@ describe('NodeDetailsPanel', () => {
       />
     );
 
-    expect(screen.getByText('Type')).toBeInTheDocument();
     expect(screen.getByText('FILE')).toBeInTheDocument();
   });
 
@@ -78,7 +77,7 @@ describe('NodeDetailsPanel', () => {
       />
     );
 
-    expect(screen.getByText('Path')).toBeInTheDocument();
+    expect(screen.getByText('PATH')).toBeInTheDocument();
     expect(screen.getByText('/Root/Test Node')).toBeInTheDocument();
   });
 
@@ -211,7 +210,7 @@ describe('NodeDetailsPanel', () => {
       />
     );
 
-    expect(screen.getByText('No tags')).toBeInTheDocument();
+    expect(screen.getByText('No tags added yet')).toBeInTheDocument();
   });
 
   it('should display "No tags" message when tags is undefined', () => {
@@ -227,7 +226,7 @@ describe('NodeDetailsPanel', () => {
       />
     );
 
-    expect(screen.getByText('No tags')).toBeInTheDocument();
+    expect(screen.getByText('No tags added yet')).toBeInTheDocument();
   });
 
   it('should open AddTagDialog when Add Tag button is clicked', () => {

@@ -8,7 +8,6 @@ import com.treevault.domain.model.valueobject.TagKey;
 import com.treevault.domain.model.valueobject.TagValue;
 import com.treevault.domain.exception.CircularReferenceException;
 import com.treevault.domain.exception.InvalidNodeOperationException;
-import com.treevault.domain.exception.NodeNotFoundException;
 import com.treevault.domain.exception.NodeValidationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

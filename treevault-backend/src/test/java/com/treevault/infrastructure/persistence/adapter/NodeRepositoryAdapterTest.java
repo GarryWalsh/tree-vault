@@ -4,7 +4,6 @@ import com.treevault.domain.model.entity.Node;
 import com.treevault.domain.model.valueobject.NodeId;
 import com.treevault.domain.model.valueobject.NodeName;
 import com.treevault.domain.model.valueobject.NodeType;
-import com.treevault.domain.model.valueobject.Position;
 import com.treevault.domain.model.valueobject.TagKey;
 import com.treevault.domain.model.valueobject.TagValue;
 import com.treevault.domain.repository.NodeRepository;

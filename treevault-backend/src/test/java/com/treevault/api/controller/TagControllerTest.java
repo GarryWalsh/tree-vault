@@ -58,11 +58,6 @@ class TagControllerTest {
     @Autowired
     private ApiMapper apiMapper;
 
-    @AfterEach
-    void resetMocks() {
-        reset(addTagUseCase, removeTagUseCase, apiMapper);
-    }
-
     @Test
     @DisplayName("Should add tag successfully")
     void shouldAddTagSuccessfully() throws Exception {

@@ -60,17 +60,17 @@ class NodeControllerTest {
     private DeleteNodeUseCase deleteNodeUseCase;
     
     @Autowired
-    private MoveNodeUseCase moveNodeUseCase;
-    
-    @Autowired
     private GetTreeUseCase getTreeUseCase;
     
     @Autowired
-    private ApiMapper apiMapper;
+    private MoveNodeUseCase moveNodeUseCase;
     
+    @Autowired
+    private ApiMapper apiMapper;
+
     @AfterEach
     void resetMocks() {
-        reset(createNodeUseCase, updateNodeUseCase, deleteNodeUseCase, moveNodeUseCase, getTreeUseCase, apiMapper);
+        reset(createNodeUseCase, updateNodeUseCase, deleteNodeUseCase, getTreeUseCase, moveNodeUseCase, apiMapper);
     }
 
     @Test
