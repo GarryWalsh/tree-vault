@@ -40,8 +40,8 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
 
   if (!node) {
     return (
-      <Paper elevation={2} sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+      <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
           Node Details
         </Typography>
 
@@ -52,7 +52,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'column',
-            gap: 1,
+            gap: 0.5,
           }}
         >
           <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
@@ -68,41 +68,41 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
 
   return (
     <>
-      <Paper elevation={2} sx={{ p: 3, height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <Paper elevation={2} sx={{ p: 2, height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         {/* Header Section */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+        <Box sx={{ mb: 1.5 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
             Node Details
           </Typography>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
             {node.type === 'FOLDER' ? (
-              <FolderIcon color="primary" sx={{ fontSize: 32 }} />
+              <FolderIcon color="primary" sx={{ fontSize: 28 }} />
             ) : (
-              <FileIcon color="action" sx={{ fontSize: 32 }} />
+              <FileIcon color="action" sx={{ fontSize: 28 }} />
             )}
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={{ wordBreak: 'break-word', mb: 0.5 }}>
+              <Typography variant="h6" sx={{ wordBreak: 'break-word', mb: 0.5 }}>
                 {node.name}
               </Typography>
               <Chip 
                 label={node.type} 
                 size="small" 
                 color={node.type === 'FOLDER' ? 'primary' : 'default'}
-                sx={{ fontWeight: 500 }}
+                sx={{ fontWeight: 500, height: '20px' }}
               />
             </Box>
           </Box>
         </Box>
 
-        <Stack spacing={2.5} sx={{ flex: 1 }}>
+        <Stack spacing={1.5} sx={{ flex: 1 }}>
           {/* Path Section */}
           <Card variant="outlined" sx={{ bgcolor: 'background.default' }}>
-            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
+            <CardContent sx={{ py: 1, px: 1.5, '&:last-child': { pb: 1 } }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25, fontWeight: 600 }}>
                 PATH
               </Typography>
-              <Typography variant="body2" sx={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+              <Typography variant="body2" sx={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.8rem' }}>
                 {node.path}
               </Typography>
             </CardContent>
@@ -110,65 +110,65 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
 
           {/* Metadata Section */}
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: '0.875rem' }}>
               Metadata
             </Typography>
-            <Stack spacing={1.5}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.5 }}>
+            <Stack spacing={0.5}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 1, alignItems: 'start' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.25 }}>
                   ID
                 </Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>
                   {node.id}
                 </Typography>
               </Box>
 
               {node.parentId && (
-                <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 1, alignItems: 'start' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.25 }}>
                     Parent ID
                   </Typography>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>
                     {node.parentId}
                   </Typography>
                 </Box>
               )}
 
               {node.position !== undefined && (
-                <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 1, alignItems: 'start' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.25 }}>
                     Position
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
                     {node.position}
                   </Typography>
                 </Box>
               )}
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 1, alignItems: 'start' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.25 }}>
                   Created
                 </Typography>
-                <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
                   {formatDate(node.createdAt)}
                 </Typography>
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 1, alignItems: 'start' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.25 }}>
                   Updated
                 </Typography>
-                <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
                   {formatDate(node.updatedAt)}
                 </Typography>
               </Box>
 
               {node.version !== undefined && (
-                <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.5 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 1, alignItems: 'start' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, pt: 0.25 }}>
                     Version
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
                     {node.version}
                   </Typography>
                 </Box>
@@ -176,12 +176,12 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
             </Stack>
           </Box>
 
-          <Divider />
+          <Divider sx={{ my: 0.5 }} />
 
           {/* Tags Section */}
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
                 Tags
               </Typography>
               <Button
@@ -189,25 +189,26 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={() => setAddTagOpen(true)}
+                sx={{ py: 0.25, px: 1, fontSize: '0.75rem' }}
               >
                 Add Tag
               </Button>
             </Box>
             {node.tags && Object.keys(node.tags).length > 0 ? (
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                 {Object.entries(node.tags).map(([key, value]) => (
                   <Chip
                     key={key}
                     label={`${key}: ${value}`}
-                    size="medium"
+                    size="small"
                     onDelete={() => setTagToDelete(key)}
                     deleteIcon={<CloseIcon />}
-                    sx={{ fontWeight: 500 }}
+                    sx={{ fontWeight: 500, height: '24px', fontSize: '0.75rem' }}
                   />
                 ))}
               </Stack>
             ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.8rem' }}>
                 No tags added yet
               </Typography>
             )}
