@@ -27,23 +27,45 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
   const [addTagOpen, setAddTagOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
 
-  if (!node) {
-    return (
-      <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
-        <Typography variant="body2" color="text.secondary">
-          Select a node to view details
-        </Typography>
-      </Paper>
-    );
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
 
+  if (!node) {
+    return (
+      <Paper elevation={2} sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          Node Details
+        </Typography>
+
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
+            No node selected
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Select a node to view its details
+          </Typography>
+        </Box>
+      </Paper>
+    );
+  }
+
   return (
     <>
       <Paper elevation={2} sx={{ p: 3, height: '100%', overflow: 'auto' }}>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          Node Details
+        </Typography>
+        
         <Typography variant="h6" gutterBottom>
           {node.name}
         </Typography>

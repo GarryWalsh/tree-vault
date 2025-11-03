@@ -345,24 +345,27 @@ export const EnhancedTreeView: React.FC = () => {
         anchorEl={contextMenu?.anchorEl}
         onClose={() => setContextMenu(null)}
       >
-        <MenuItem
-          onClick={() => {
-            // Get fresh node data from the tree before opening dialog
-            if (contextMenu && tree) {
-              const currentNode = findNodeById(contextMenu.nodeId);
-              if (currentNode) {
-                setCreateDialogParent({
-                  nodeId: currentNode.id,
-                  nodeName: currentNode.name,
-                });
+        {/* Only show Create Child Node option for folders */}
+        {contextMenu?.nodeType === 'FOLDER' && (
+          <MenuItem
+            onClick={() => {
+              // Get fresh node data from the tree before opening dialog
+              if (contextMenu && tree) {
+                const currentNode = findNodeById(contextMenu.nodeId);
+                if (currentNode) {
+                  setCreateDialogParent({
+                    nodeId: currentNode.id,
+                    nodeName: currentNode.name,
+                  });
+                }
               }
-            }
-            setCreateDialogOpen(true);
-            setContextMenu(null);
-          }}
-        >
-          Create Child Node
-        </MenuItem>
+              setCreateDialogOpen(true);
+              setContextMenu(null);
+            }}
+          >
+            Create Child Node
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             // Get fresh node data from the tree before opening dialog
