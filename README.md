@@ -19,7 +19,22 @@ Hierarchical file management system with tag support. Spring Boot backend with C
 - RFC 9457 error handling
 - OpenAPI documentation
 
-## Quick Start with Docker
+## Live Application
+
+Application is deployed on a FREE instance of Render
+
+**Access the application:**
+   - **Frontend:** https://tree-vault-frontend.onrender.com/
+   - **API:** https://tree-vault-backend.onrender.com/api/v1/
+   - **API Docs:** https://tree-vault-backend.onrender.com/swagger-ui/index.html
+   - **Health:** https://tree-vault-backend.onrender.com/actuator/health
+
+**Note:** Free tier services may experience ~30-60 second cold starts on first request if inactive.
+
+**Uptime Monitoring:** https://stats.uptimerobot.com/4dcZKUZuBV  
+Services are pinged every 14 minutes to minimize downtime (Render free tier sleeps after 15 minutes of inactivity).
+
+## Local Quick Start with Docker
 
 **Prerequisites:**
 - Docker Desktop
