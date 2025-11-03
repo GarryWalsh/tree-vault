@@ -19,6 +19,8 @@ import {
   Refresh as RefreshIcon,
   Error as ErrorIcon,
   Add as AddIcon,
+  UnfoldMore as ExpandAllIcon,
+  UnfoldLess as CollapseAllIcon,
 } from '@mui/icons-material';
 import { useTreeStore } from '../../store/treeStore';
 import { CreateNodeDialog } from '../dialogs/CreateNodeDialog';
@@ -156,6 +158,36 @@ export const EnhancedTreeView: React.FC = () => {
     }
   };
 
+  // Helper function to collect all folder node IDs recursively
+  const collectAllFolderIds = (node: any): string[] => {
+    const ids: string[] = [];
+    if (node.type === 'FOLDER') {
+      ids.push(node.id);
+      if (node.children) {
+        node.children.forEach((child: any) => {
+          ids.push(...collectAllFolderIds(child));
+        });
+      }
+    }
+    return ids;
+  };
+
+  // Handler to expand all nodes
+  const handleExpandAll = () => {
+    if (tree?.root.children) {
+      const allFolderIds: string[] = [];
+      tree.root.children.forEach((child) => {
+        allFolderIds.push(...collectAllFolderIds(child));
+      });
+      setExpandedNodes(allFolderIds);
+    }
+  };
+
+  // Handler to collapse all nodes
+  const handleCollapseAll = () => {
+    setExpandedNodes([]);
+  };
+
   if (loading) {
     return (
       <Grid container spacing={2}>
@@ -231,32 +263,68 @@ export const EnhancedTreeView: React.FC = () => {
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 2, height: '600px', display: 'flex', flexDirection: 'column' }}>
-            {/* Header with small add button */}
+            {/* Header with action buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                Folders & Files
+                Your Folders & Files
               </Typography>
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => {
-                  // Set parent to root node for creating root-level child
-                  setCreateDialogParent({
-                    nodeId: tree.root.id,
-                    nodeName: tree.root.name,
-                  });
-                  setCreateDialogOpen(true);
-                }}
-                sx={{ 
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: 'primary.dark',
-                  }
-                }}
-              >
-                <AddIcon fontSize="small" />
-              </IconButton>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {/* Collapse All Button */}
+                <IconButton
+                  size="small"
+                  onClick={handleCollapseAll}
+                  disabled={isTreeEmpty || expandedNodeIds.length === 0}
+                  title="Collapse All"
+                  sx={{
+                    color: 'action.active',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    }
+                  }}
+                >
+                  <CollapseAllIcon fontSize="small" />
+                </IconButton>
+                
+                {/* Expand All Button */}
+                <IconButton
+                  size="small"
+                  onClick={handleExpandAll}
+                  disabled={isTreeEmpty}
+                  title="Expand All"
+                  sx={{
+                    color: 'action.active',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    }
+                  }}
+                >
+                  <ExpandAllIcon fontSize="small" />
+                </IconButton>
+                
+                {/* Add Button */}
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => {
+                    // Set parent to root node for creating root-level child
+                    setCreateDialogParent({
+                      nodeId: tree.root.id,
+                      nodeName: tree.root.name,
+                    });
+                    setCreateDialogOpen(true);
+                  }}
+                  title="Create New Node"
+                  sx={{ 
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    }
+                  }}
+                >
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              </Box>
             </Box>
 
             {/* Tree content area */}
