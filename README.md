@@ -377,6 +377,42 @@ Infrastructure Layer (JPA Repositories, Adapters)
 - `idx_tags_node`: Tag lookup by node
 - `idx_tags_key`: Tag lookup by key
 
+
+## Notes
+
+**MVP Limitations:**
+
+The MVP does not implement user authentication or session management. For demo purposes, the application uses a shared database state, meaning:
+
+- All users share the same tree structure and data
+- There is no concept of user accounts, login, or personal workspaces
+- Changes made by one user are immediately visible to all other users
+- The database is effectively a single shared workspace
+
+**Additional MVP Limitations:**
+
+- **No File Content Storage**: Files are metadata-only (name, type, tags). The system does not store actual file content, file uploads, or file downloads. Files exist only as nodes in the hierarchy with associated metadata.
+
+- **No Bulk Operations**: All operations are performed on individual nodes. There is no support for batch operations like multi-select, bulk delete, or bulk tag assignment.
+
+- **No Copy/Duplicate**: Nodes can be moved but not copied or duplicated. Each node must be created individually.
+
+- **No Export/Import**: There is no way to export the tree structure to a file format (JSON, XML, etc.) or import from external sources.
+
+- **No Advanced Filtering**: The tree cannot be filtered by node type, tags, creation date, or other attributes. All nodes are displayed in the full hierarchy.
+
+- **No Custom Sorting**: Nodes are displayed in their position order within the hierarchy. There is no option to sort by name, date, or other criteria.
+
+- **No History/Versioning**: Beyond basic `created_at` and `updated_at` timestamps, there is no audit trail, change history, or version control for nodes.
+
+- **No Permissions/Access Control**: All nodes are accessible to all users. There is no concept of file-level or folder-level permissions, read-only access, or ownership.
+
+- **No File Preview**: Since files contain no actual content, there is no file preview functionality.
+
+- **Free Tier Deployment**: The live application runs on Render's free tier, which may experience ~30-60 second cold starts after periods of inactivity and poor performance for any actions performed.
+
+This is intentional for the MVP scope to keep the implementation simple and focused on core hierarchical file management features. Future versions could add multi-tenancy, user authentication, isolated workspaces, file content storage, search, and other advanced features.
+
 ## License
 
 Part of the TreeVault project.
