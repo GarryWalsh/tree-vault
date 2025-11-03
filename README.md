@@ -2,6 +2,8 @@
 
 Hierarchical file management system with tag support. Spring Boot backend with Clean Architecture, React frontend with Material-UI.
 
+![TreeVault Application Screenshot](docs/treevault-app.png)
+
 ## System Overview
 
 **Stack:**
