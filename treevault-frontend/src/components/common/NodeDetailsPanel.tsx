@@ -9,12 +9,15 @@ import {
   Button,
   Card,
   CardContent,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Close as CloseIcon,
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
+  ContentCopy as CopyIcon,
 } from '@mui/icons-material';
 import { NodeResponse } from '../../api/types';
 import { AddTagDialog } from '../dialogs/AddTagDialog';
@@ -33,14 +36,62 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
 }) => {
   const [addTagOpen, setAddTagOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
 
+  // Calculate node statistics
+  const getNodeStats = (node: any): { childCount: number; folderCount: number; fileCount: number; depth: number } => {
+    const countChildren = (n: any, depth: number = 0): { childCount: number; folderCount: number; fileCount: number; maxDepth: number } => {
+      let childCount = 0;
+      let folderCount = 0;
+      let fileCount = 0;
+      let maxDepth = depth;
+
+      if (n.children) {
+        n.children.forEach((child: any) => {
+          childCount++;
+          if (child.type === 'FOLDER') {
+            folderCount++;
+            const childStats = countChildren(child, depth + 1);
+            childCount += childStats.childCount;
+            folderCount += childStats.folderCount;
+            fileCount += childStats.fileCount;
+            maxDepth = Math.max(maxDepth, childStats.maxDepth);
+          } else {
+            fileCount++;
+          }
+        });
+      }
+
+      return { childCount, folderCount, fileCount, maxDepth };
+    };
+
+    const stats = countChildren(node);
+    return {
+      childCount: stats.childCount,
+      folderCount: stats.folderCount,
+      fileCount: stats.fileCount,
+      depth: stats.maxDepth,
+    };
+  };
+
+  const handleCopyPath = async () => {
+    if (!node) return;
+    try {
+      await navigator.clipboard.writeText(node.path);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy path:', err);
+    }
+  };
+
   if (!node) {
     return (
-      <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Paper elevation={2} sx={{ p: 2, height: '650px', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
           Node Details
         </Typography>
@@ -68,7 +119,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
 
   return (
     <>
-      <Paper elevation={2} sx={{ p: 2, height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <Paper elevation={2} sx={{ p: 2, height: '650px', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         {/* Header Section */}
         <Box sx={{ mb: 1.5 }}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -99,14 +150,70 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
           {/* Path Section */}
           <Card variant="outlined" sx={{ bgcolor: 'background.default' }}>
             <CardContent sx={{ py: 1, px: 1.5, '&:last-child': { pb: 1 } }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25, fontWeight: 600 }}>
-                PATH
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  PATH
+                </Typography>
+                <Tooltip title={copied ? 'Copied!' : 'Copy path'}>
+                  <IconButton
+                    size="small"
+                    onClick={handleCopyPath}
+                    sx={{ p: 0.5, ml: 1 }}
+                  >
+                    <CopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               <Typography variant="body2" sx={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.8rem' }}>
                 {node.path}
               </Typography>
             </CardContent>
           </Card>
+
+          {/* Node Statistics - only show for folders */}
+          {node.type === 'FOLDER' && node.children && (
+            <Card variant="outlined" sx={{ bgcolor: 'background.default' }}>
+              <CardContent sx={{ py: 1, px: 1.5, '&:last-child': { pb: 1 } }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75, fontWeight: 600 }}>
+                  STATISTICS
+                </Typography>
+                <Stack spacing={0.5}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Total Children
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      {getNodeStats(node).childCount}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Folders
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      {getNodeStats(node).folderCount}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Files
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      {getNodeStats(node).fileCount}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1, alignItems: 'start' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Max Depth
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      {getNodeStats(node).depth}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Metadata Section */}
           <Box>
@@ -201,6 +308,8 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
                     key={key}
                     label={`${key}: ${value}`}
                     size="small"
+                    color="primary"
+                    variant="outlined"
                     onDelete={() => setTagToDelete(key)}
                     deleteIcon={<CloseIcon />}
                     sx={{ fontWeight: 500, height: '24px', fontSize: '0.75rem' }}

@@ -12,6 +12,8 @@ import {
   Typography,
   Skeleton,
   IconButton,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -21,6 +23,8 @@ import {
   Add as AddIcon,
   UnfoldMore as ExpandAllIcon,
   UnfoldLess as CollapseAllIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useTreeStore } from '../../store/treeStore';
 import { CreateNodeDialog } from '../dialogs/CreateNodeDialog';
@@ -45,6 +49,7 @@ export const EnhancedTreeView: React.FC = () => {
   } | null>(null);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -188,6 +193,70 @@ export const EnhancedTreeView: React.FC = () => {
     setExpandedNodes([]);
   };
 
+  // Filter nodes based on search query
+  const filterNode = (node: any, query: string): boolean => {
+    if (!query.trim()) return true;
+    const lowerQuery = query.toLowerCase();
+    if (node.name.toLowerCase().includes(lowerQuery)) return true;
+    if (node.children) {
+      return node.children.some((child: any) => filterNode(child, query));
+    }
+    return false;
+  };
+
+  // Filter tree nodes based on search
+  const getFilteredChildren = (children: any[]): any[] => {
+    if (!searchQuery.trim()) return children;
+    return children.filter(child => filterNode(child, searchQuery));
+  };
+
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if no input is focused
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Delete key - delete selected node
+      if (e.key === 'Delete' && selectedNodeId) {
+        const node = findNodeById(selectedNodeId);
+        if (node) {
+          setContextMenu({
+            nodeId: node.id,
+            nodeName: node.name,
+            nodeType: node.type,
+            anchorEl: null,
+          });
+          setDeleteDialogOpen(true);
+        }
+      }
+
+      // F2 key - rename selected node
+      if (e.key === 'F2' && selectedNodeId) {
+        const node = findNodeById(selectedNodeId);
+        if (node) {
+          setContextMenu({
+            nodeId: node.id,
+            nodeName: node.name,
+            nodeType: node.type,
+            anchorEl: null,
+          });
+          setRenameDialogOpen(true);
+        }
+      }
+
+      // F5 key - refresh tree
+      if (e.key === 'F5') {
+        e.preventDefault();
+        loadTree();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNodeId, findNodeById, loadTree]);
+
   if (loading) {
     return (
       <Grid container spacing={2}>
@@ -237,7 +306,7 @@ export const EnhancedTreeView: React.FC = () => {
 
   if (!tree) {
     return (
-      <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+      <Paper elevation={2} sx={{ p: 4, height: '650px', textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary" gutterBottom>
           No Tree Data Available
         </Typography>
@@ -262,13 +331,15 @@ export const EnhancedTreeView: React.FC = () => {
     <>
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 2, height: '600px', display: 'flex', flexDirection: 'column' }}>
+          <Paper elevation={2} sx={{ p: 2, height: '650px', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
             {/* Header with action buttons */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Your Folders & Files
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ mb: isTreeEmpty ? 1 : 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: isTreeEmpty ? 0 : 1 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: isTreeEmpty ? 1 : 0 }}>
+                  Your Folders & Files
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+
                 {/* Expand/Collapse Button Group */}
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                   {/* Collapse All Button */}
@@ -330,6 +401,37 @@ export const EnhancedTreeView: React.FC = () => {
               </Box>
             </Box>
 
+            {/* Search bar - only show when tree is not empty */}
+            {!isTreeEmpty && (
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Search nodes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchQuery('')}
+                        edge="end"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
+                }}
+                sx={{ mb: 1 }}
+              />
+            )}
+          </Box>
+
             {/* Tree content area */}
             <Box sx={{ flex: 1, overflow: 'auto' }}>
               {isTreeEmpty ? (
@@ -349,6 +451,25 @@ export const EnhancedTreeView: React.FC = () => {
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Click the button above to create your first folder or file
+                  </Typography>
+                </Box>
+              ) : getFilteredChildren(tree.root.children || []).length === 0 && searchQuery.trim() ? (
+                // Show message when search returns no results
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="h6" color="text.secondary">
+                    No results found
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Try adjusting your search query
                   </Typography>
                 </Box>
               ) : (
@@ -380,7 +501,7 @@ export const EnhancedTreeView: React.FC = () => {
                     },
                   }}
                 >
-                  {tree.root.children?.map((child) => (
+                  {getFilteredChildren(tree.root.children || []).map((child) => (
                     <TreeNode
                       key={child.id}
                       node={child}
@@ -392,6 +513,7 @@ export const EnhancedTreeView: React.FC = () => {
                       onDragLeave={handleDragLeave}
                       onDrop={handleDropWrapper}
                       onContextMenu={handleContextMenu}
+                      searchQuery={searchQuery}
                     />
                   ))}
                 </SimpleTreeView>
@@ -455,7 +577,7 @@ export const EnhancedTreeView: React.FC = () => {
             setRenameDialogOpen(true);
           }}
         >
-          Rename
+          Rename (F2)
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -475,7 +597,7 @@ export const EnhancedTreeView: React.FC = () => {
             setDeleteDialogOpen(true);
           }}
         >
-          Delete
+          Delete (Del)
         </MenuItem>
       </Menu>
 

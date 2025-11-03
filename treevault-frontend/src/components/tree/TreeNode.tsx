@@ -14,6 +14,7 @@ interface TreeNodeProps {
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetNode: NodeResponse, parentNode: NodeResponse | null) => void;
   onContextMenu: (nodeId: string, nodeName: string, nodeType: 'FOLDER' | 'FILE', anchorEl: HTMLElement) => void;
+  searchQuery?: string;
 }
 
 export const TreeNode: React.FC<TreeNodeProps> = ({
@@ -26,7 +27,29 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
   onDragLeave,
   onDrop,
   onContextMenu,
+  searchQuery = '',
 }) => {
+  // Highlight search matches in node name
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    // Escape special regex characters
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+    const lowerQuery = query.toLowerCase();
+    return (
+      <span>
+        {parts.map((part, i) =>
+          part.toLowerCase() === lowerQuery ? (
+            <mark key={i} style={{ backgroundColor: 'yellow', padding: '0 2px', borderRadius: '2px' }}>
+              {part}
+            </mark>
+          ) : (
+            part
+          )
+        )}
+      </span>
+    );
+  };
   const isDropTarget = dropTargetId === node.id;
   const showDropBefore = isDropTarget && dropPosition === 'before';
   const showDropAfter = isDropTarget && dropPosition === 'after';
@@ -77,7 +100,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
             onDrop={(e) => onDrop(e, node, parentNode)}
           >
             {node.type === 'FOLDER' ? <Folder /> : <InsertDriveFile />}
-            <span>{node.name}</span>
+            <span>{highlightText(node.name, searchQuery)}</span>
             <IconButton
               size="small"
               onClick={(e) => {
@@ -119,6 +142,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onContextMenu={onContextMenu}
+          searchQuery={searchQuery}
         />
       ))}
     </TreeItem>
