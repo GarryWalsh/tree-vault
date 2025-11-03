@@ -268,38 +268,41 @@ export const EnhancedTreeView: React.FC = () => {
               <Typography variant="subtitle2" color="text.secondary">
                 Your Folders & Files
               </Typography>
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                {/* Collapse All Button */}
-                <IconButton
-                  size="small"
-                  onClick={handleCollapseAll}
-                  disabled={isTreeEmpty || expandedNodeIds.length === 0}
-                  title="Collapse All"
-                  sx={{
-                    color: 'action.active',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    }
-                  }}
-                >
-                  <CollapseAllIcon fontSize="small" />
-                </IconButton>
-                
-                {/* Expand All Button */}
-                <IconButton
-                  size="small"
-                  onClick={handleExpandAll}
-                  disabled={isTreeEmpty}
-                  title="Expand All"
-                  sx={{
-                    color: 'action.active',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    }
-                  }}
-                >
-                  <ExpandAllIcon fontSize="small" />
-                </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {/* Expand/Collapse Button Group */}
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {/* Collapse All Button */}
+                  <IconButton
+                    size="small"
+                    onClick={handleCollapseAll}
+                    disabled={isTreeEmpty || expandedNodeIds.length === 0}
+                    title="Collapse All"
+                    sx={{
+                      color: 'action.active',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      }
+                    }}
+                  >
+                    <CollapseAllIcon fontSize="small" />
+                  </IconButton>
+                  
+                  {/* Expand All Button */}
+                  <IconButton
+                    size="small"
+                    onClick={handleExpandAll}
+                    disabled={isTreeEmpty}
+                    title="Expand All"
+                    sx={{
+                      color: 'action.active',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      }
+                    }}
+                  >
+                    <ExpandAllIcon fontSize="small" />
+                  </IconButton>
+                </Box>
                 
                 {/* Add Button */}
                 <IconButton
