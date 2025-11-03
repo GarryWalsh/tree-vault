@@ -1,10 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { nodeApi } from '../api/nodeApi';
-import { TreeResponse, NodeResponse } from '../api/types';
+import { NodeResponse } from '../api/types';
 import { useTreeStore } from '../store/treeStore';
 
 export interface NodeOperationsHandlers {
-  tree: TreeResponse | null;
   loadTree: () => Promise<void>;
   handleCreateNode: (name: string, type: 'FOLDER' | 'FILE', parentId: string) => Promise<void>;
   handleRenameNode: (nodeId: string, newName: string) => Promise<void>;
@@ -22,8 +21,17 @@ interface UseNodeOperationsOptions {
 }
 
 export const useNodeOperations = (options?: UseNodeOperationsOptions): NodeOperationsHandlers => {
-  const [tree, setTree] = useState<TreeResponse | null>(null);
-  const { selectedNodeId, selectNode, setLoading, setError } = useTreeStore();
+  const { 
+    tree,
+    selectedNodeId, 
+    selectNode, 
+    setLoading, 
+    setError,
+    setTree,
+    updateNodeInTree,
+    addNodeToTree,
+    removeNodeFromTree
+  } = useTreeStore();
 
   const { onSuccess, onError } = options || {};
 
@@ -40,17 +48,18 @@ export const useNodeOperations = (options?: UseNodeOperationsOptions): NodeOpera
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setError, onError]);
+  }, [setLoading, setError, setTree, onError]);
 
   const handleCreateNode = useCallback(async (name: string, type: 'FOLDER' | 'FILE', parentId: string) => {
     try {
       console.log('Creating node:', { name, type, parentId });
-      await nodeApi.createNode({
+      const response = await nodeApi.createNode({
         name,
         type,
         parentId,
       });
-      await loadTree();
+      // Add the new node to local state
+      addNodeToTree(parentId, response.data);
       onSuccess?.(`${type === 'FOLDER' ? 'Folder' : 'File'} "${name}" created successfully`);
     } catch (err: any) {
       console.error('Create node error:', err);
@@ -58,24 +67,26 @@ export const useNodeOperations = (options?: UseNodeOperationsOptions): NodeOpera
       onError?.(errorDetail);
       throw err;
     }
-  }, [loadTree, onSuccess, onError]);
+  }, [addNodeToTree, onSuccess, onError]);
 
   const handleRenameNode = useCallback(async (nodeId: string, newName: string) => {
     try {
-      await nodeApi.updateNode(nodeId, newName);
-      await loadTree();
+      const response = await nodeApi.updateNode(nodeId, newName);
+      // Update the node in local state
+      updateNodeInTree(nodeId, (node) => ({ ...node, ...response.data }));
       onSuccess?.(`Renamed to "${newName}" successfully`);
     } catch (err: any) {
       const errorDetail = err.response?.data?.detail || 'Failed to rename node';
       onError?.(errorDetail);
       throw err;
     }
-  }, [loadTree, onSuccess, onError]);
+  }, [updateNodeInTree, onSuccess, onError]);
 
   const handleDeleteNode = useCallback(async (nodeId: string) => {
     try {
       await nodeApi.deleteNode(nodeId);
-      await loadTree();
+      // Remove the node from local state
+      removeNodeFromTree(nodeId);
       if (selectedNodeId === nodeId) {
         selectNode(null);
       }
@@ -85,37 +96,49 @@ export const useNodeOperations = (options?: UseNodeOperationsOptions): NodeOpera
       onError?.(errorDetail);
       throw err;
     }
-  }, [loadTree, selectedNodeId, selectNode, onSuccess, onError]);
+  }, [removeNodeFromTree, selectedNodeId, selectNode, onSuccess, onError]);
 
   const handleAddTag = useCallback(async (nodeId: string, key: string, value: string) => {
     try {
       await nodeApi.addTag(nodeId, key, value);
-      await loadTree();
+      // Update the node's tags in local state
+      updateNodeInTree(nodeId, (node) => ({
+        ...node,
+        tags: { ...(node.tags || {}), [key]: value }
+      }));
       onSuccess?.('Tag added successfully');
     } catch (err: any) {
       const errorDetail = err.response?.data?.detail || 'Failed to add tag';
       onError?.(errorDetail);
       throw err;
     }
-  }, [loadTree, onSuccess, onError]);
+  }, [updateNodeInTree, onSuccess, onError]);
 
   const handleRemoveTag = useCallback(async (nodeId: string, key: string) => {
     try {
       await nodeApi.removeTag(nodeId, key);
-      await loadTree();
+      // Remove the tag from local state
+      updateNodeInTree(nodeId, (node) => {
+        const { [key]: removed, ...remainingTags } = node.tags || {};
+        return { ...node, tags: remainingTags };
+      });
       onSuccess?.('Tag removed successfully');
     } catch (err: any) {
       const errorDetail = err.response?.data?.detail || 'Failed to remove tag';
       onError?.(errorDetail);
       throw err;
     }
-  }, [loadTree, onSuccess, onError]);
+  }, [updateNodeInTree, onSuccess, onError]);
 
   const handleMoveNode = useCallback(async (nodeId: string, newParentId: string, position: number) => {
     try {
       console.log('Moving node:', { nodeId, newParentId, position });
       await nodeApi.moveNode(nodeId, newParentId, position);
-      await loadTree();
+      // For move operations, we need to refetch to get the updated tree structure
+      // This is because moving involves removing from one location and adding to another
+      // which is complex to do correctly with local state
+      const treeResponse = await nodeApi.getTree();
+      setTree(treeResponse.data);
       onSuccess?.('Node moved successfully');
     } catch (err: any) {
       console.error('Move node error:', err);
@@ -123,7 +146,7 @@ export const useNodeOperations = (options?: UseNodeOperationsOptions): NodeOpera
       onError?.(errorDetail);
       throw err;
     }
-  }, [loadTree, onSuccess, onError]);
+  }, [setTree, onSuccess, onError]);
 
   const findNodeByIdRecursive = useCallback((node: NodeResponse, id: string): NodeResponse | null => {
     if (node.id === id) return node;
@@ -147,7 +170,6 @@ export const useNodeOperations = (options?: UseNodeOperationsOptions): NodeOpera
   }, [tree, selectedNodeId, findNodeByIdRecursive]);
 
   return {
-    tree,
     loadTree,
     handleCreateNode,
     handleRenameNode,

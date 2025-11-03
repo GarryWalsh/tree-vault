@@ -84,6 +84,7 @@ describe('useNodeOperations', () => {
     vi.clearAllMocks();
     // Reset store state
     const store = useTreeStore.getState();
+    store.setTree(null);
     store.selectNode(null);
     store.setLoading(false);
     store.setError(null);
@@ -101,7 +102,7 @@ describe('useNodeOperations', () => {
       });
 
       expect(nodeApi.getTree).toHaveBeenCalled();
-      expect(result.current.tree).toEqual(mockTreeResponse.data);
+      expect(useTreeStore.getState().tree).toEqual(mockTreeResponse.data);
       expect(useTreeStore.getState().loading).toBe(false);
       expect(useTreeStore.getState().error).toBeNull();
     });
@@ -182,7 +183,7 @@ describe('useNodeOperations', () => {
         parentId: 'root-1',
       });
       expect(mockOnSuccess).toHaveBeenCalledWith('Folder "New Folder" created successfully');
-      expect(nodeApi.getTree).toHaveBeenCalledTimes(2); // Initial load + refresh after create
+      expect(nodeApi.getTree).toHaveBeenCalledTimes(1); // Only initial load, create updates local state
     });
 
     it('should create a file successfully', async () => {
@@ -249,7 +250,7 @@ describe('useNodeOperations', () => {
 
       expect(nodeApi.updateNode).toHaveBeenCalledWith('node-1', 'Renamed Node');
       expect(mockOnSuccess).toHaveBeenCalledWith('Renamed to "Renamed Node" successfully');
-      expect(nodeApi.getTree).toHaveBeenCalledTimes(2); // Initial load + refresh after rename
+      expect(nodeApi.getTree).toHaveBeenCalledTimes(1); // Only initial load, rename updates local state
     });
 
     it('should handle rename error', async () => {
@@ -299,7 +300,7 @@ describe('useNodeOperations', () => {
 
       expect(nodeApi.deleteNode).toHaveBeenCalledWith('node-1');
       expect(mockOnSuccess).toHaveBeenCalledWith('Node deleted successfully');
-      expect(nodeApi.getTree).toHaveBeenCalledTimes(2);
+      expect(nodeApi.getTree).toHaveBeenCalledTimes(1); // Only initial load, delete updates local state
     });
 
     it('should deselect node after deletion if it was selected', async () => {
@@ -393,7 +394,7 @@ describe('useNodeOperations', () => {
 
       expect(nodeApi.addTag).toHaveBeenCalledWith('node-1', 'priority', 'high');
       expect(mockOnSuccess).toHaveBeenCalledWith('Tag added successfully');
-      expect(nodeApi.getTree).toHaveBeenCalledTimes(2);
+      expect(nodeApi.getTree).toHaveBeenCalledTimes(1); // Only initial load, addTag updates local state
     });
 
     it('should handle add tag error', async () => {
@@ -443,7 +444,7 @@ describe('useNodeOperations', () => {
 
       expect(nodeApi.removeTag).toHaveBeenCalledWith('node-1', 'priority');
       expect(mockOnSuccess).toHaveBeenCalledWith('Tag removed successfully');
-      expect(nodeApi.getTree).toHaveBeenCalledTimes(2);
+      expect(nodeApi.getTree).toHaveBeenCalledTimes(1); // Only initial load, removeTag updates local state
     });
 
     it('should handle remove tag error', async () => {

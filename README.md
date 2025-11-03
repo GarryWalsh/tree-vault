@@ -1,5 +1,8 @@
 # TreeVault
 
+[![Service Status](https://img.shields.io/badge/status-monitor-brightgreen)](https://stats.uptimerobot.com/4dcZKUZuBV)
+![Backend Tests](https://github.com/GarryWalsh/tree-vault/workflows/Tests/badge.svg)
+
 Hierarchical file management system with tag support. Spring Boot backend with Clean Architecture, React frontend with Material-UI.
 
 ![TreeVault Application Screenshot](docs/treevault-app.png)

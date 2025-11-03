@@ -57,6 +57,7 @@ export const EnhancedTreeView: React.FC = () => {
   }>({ open: false, message: '', severity: 'info' });
 
   const {
+    tree,
     selectedNodeId,
     expandedNodeIds,
     loading,
@@ -79,7 +80,6 @@ export const EnhancedTreeView: React.FC = () => {
 
   // Use custom hooks
   const {
-    tree,
     loadTree,
     handleCreateNode: createNode,
     handleRenameNode: renameNode,
