@@ -1,6 +1,21 @@
 # TreeVault
 
-A hierarchical file management system with tag support, built with Spring Boot backend and React frontend.
+Hierarchical file management system with tag support. Spring Boot backend with Clean Architecture, React frontend with Material-UI.
+
+## System Overview
+
+**Stack:**
+- **Backend:** Java 21, Spring Boot 3.3, PostgreSQL 16
+- **Frontend:** React 18, TypeScript 5.6, Material-UI 5.16, Vite 5.4
+- **Deployment:** Docker Compose with health checks and automatic migrations
+
+**Features:**
+- Hierarchical tree structure with drag-and-drop reordering
+- Tag management with key-value pairs
+- CRUD operations with optimistic locking
+- Path-based hierarchy for efficient queries
+- RFC 9457 error handling
+- OpenAPI documentation
 
 ## Quick Start with Docker
 
@@ -10,35 +25,33 @@ A hierarchical file management system with tag support, built with Spring Boot b
 
 **Setup Steps:**
 
-1. **Create environment file:**
+1. **Configure database credentials:**
    
-   Copy `.env.example` to `.env` in the project root:
+   Create `.env` file in the project root:
    ```bash
-   cp .env.example .env
+   DB_NAME=treevault
+   DB_USER=treevault
+   DB_PASSWORD=treevault123
    ```
    
-   Or on Windows PowerShell:
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-   
-   The default values work fine for demonstration purposes. Edit `.env` only if you want custom database credentials.
+   These environment variables are **required**. Docker Compose will fail to start without them.
 
 2. **Start all services:**
    ```bash
    docker-compose up -d
    ```
    
-   **What happens on startup:**
-   - PostgreSQL database starts with an empty database
-   - Backend waits for database to be ready (health check)
-   - Flyway automatically runs all migrations to create tables and schema
+   **Startup sequence:**
+   - PostgreSQL starts with configured credentials
+   - Backend waits for database health check
+   - Flyway runs migrations (creates schema and indexes)
    - Frontend starts after backend is healthy
 
 3. **Access the application:**
    - **Frontend:** http://localhost:3000
+   - **API:** http://localhost:8080/api/v1
    - **API Docs:** http://localhost:8080/swagger-ui/index.html
-   - **Health Check:** http://localhost:8080/actuator/health
+   - **Health:** http://localhost:8080/actuator/health
 
 ## Managing the Application
 
@@ -68,48 +81,29 @@ docker-compose down -v
 docker-compose up -d --build
 ```
 
-## Run Tests
+## Testing
 
-**Backend tests:**
+**Backend:**
 ```bash
 cd treevault-backend
 
-# Unit tests (fast, no Docker needed)
-mvn clean test
+# Unit tests only (fast, no Docker)
+mvn test
 
-# Integration/E2E tests (requires Docker + Testcontainers)
-mvn clean verify
+# All tests including integration (requires Docker for Testcontainers)
+mvn verify
 ```
 
-**Frontend tests:**
+**Frontend:**
 ```bash
 cd treevault-frontend
-npm test --run
+
+# Run all tests once
+npm test
+
+# Watch mode for development
+npm test -- --watch
 ```
-
-## Troubleshooting
-
-**Frontend shows 404 errors:**
-- The frontend is configured to call `http://localhost:8080/api/v1`
-- Check if backend is running: `docker-compose logs backend`
-
-**Backend fails to start:**
-- Check if `.env` file exists with DB credentials
-- View backend logs: `docker-compose logs backend`
-- Verify Postgres is healthy: `docker-compose ps`
-
-**Frontend tests fail with "findLastIndex is not a function":**
-- This means you're using Node.js 16 or below
-- Upgrade to Node.js 18 or higher: `node --version` to check current version
-- Download from https://nodejs.org/ or use nvm/nvm-windows
-
-**Ports already in use:**
-- Check what's using ports 3000, 8080, or 5432
-- Stop conflicting services or change ports in `docker-compose.yml`
-
-**Database issues:**
-- Clean and restart: `docker-compose down -v && docker-compose up -d`
-- This removes all data and recreates the database from scratch
 
 ---
 
@@ -161,6 +155,7 @@ src/
 │   └── types.ts           # TypeScript interfaces
 ├── components/
 │   ├── common/            # Shared components
+│   │   ├── ErrorBoundary.tsx
 │   │   └── NodeDetailsPanel.tsx
 │   ├── dialogs/           # Dialog components
 │   │   ├── AddTagDialog.tsx
@@ -169,7 +164,10 @@ src/
 │   │   └── RenameNodeDialog.tsx
 │   └── tree/              # Tree view components
 │       ├── EnhancedTreeView.tsx
-│       └── TreeView.tsx
+│       └── TreeNode.tsx
+├── hooks/                 # Custom React hooks
+│   ├── useDragAndDrop.ts  # Drag-drop logic
+│   └── useNodeOperations.ts
 ├── store/                 # State management
 │   └── treeStore.ts       # Zustand store
 ├── App.tsx                # Main application
@@ -194,66 +192,52 @@ The frontend integrates with the following backend endpoints:
 
 ### Usage Guide
 
-**Creating Nodes:**
+**Create Node:** Right-click folder → Create Child Node → Choose type and name
 
-1. Right-click on any folder node
-2. Select "Create Child Node"
-3. Choose type (Folder or File) and enter name
-4. Click "Create"
+**Rename Node:** Right-click node → Rename → Enter new name
 
-**Renaming Nodes:**
+**Move Node:** Drag node to target folder (highlights on hover)
+- Cannot drop into files
+- Cannot move folder into itself or descendants
 
-1. Right-click on any node
-2. Select "Rename"
-3. Enter new name
-4. Click "Rename"
+**Manage Tags:** Select node → Add Tag in details panel → Enter key/value
+- Remove via chip X icon
 
-**Moving Nodes (Drag & Drop):**
-
-1. Click and hold on any node
-2. Drag to target folder (will highlight)
-3. Release to drop
-
-Note: Can only drop into folders, not files. Cannot move a folder into itself or its descendants.
-
-**Managing Tags:**
-
-1. Select a node to view its details in the right panel
-2. Click "Add Tag" button
-3. Enter tag key and value
-4. Click chip's X icon to remove a tag
-
-**Deleting Nodes:**
-
-1. Right-click on any node
-2. Select "Delete"
-3. Confirm deletion (will delete node and all children)
+**Delete Node:** Right-click node → Delete → Confirm
+- Deletes node and all children
 
 ### Error Handling
 
-All API errors are handled gracefully:
-- Backend validation errors are displayed as snackbar notifications
-- Network errors show appropriate error messages
-- Tree automatically reloads after successful operations
+- Backend errors displayed via snackbar notifications
+- Network failures show user-friendly messages
+- Tree refetches after successful operations
+- ErrorBoundary catches React component errors
 
 ### State Management
 
-Uses Zustand for minimal, focused state:
-- `selectedNodeId` - Currently selected node
-- `expandedNodeIds` - List of expanded tree nodes
-- `loading` - Loading state for async operations
-- `error` - Error messages
+Zustand stores only UI state:
+- `selectedNodeId`: Currently selected node
+- `expandedNodeIds`: Expanded tree nodes
+- `loading`: Async operation state
+- `error`: Error messages
 
-Tree data is fetched fresh from backend, not stored in global state.
+Tree data fetched from backend on demand, not cached globally.
 
-### Development Principles
+### Design Decisions
 
-- **Backend-First**: All business logic and validation in backend
-- **Type Safety**: Full TypeScript coverage with strict types
-- **Error Boundaries**: Graceful error handling at all levels
-- **Accessibility**: Material-UI components are accessible by default
-- **Responsive**: Works on desktop and mobile devices
-- **Performance**: Minimal re-renders, efficient state updates
+1. **Thin Client Architecture**: Frontend is a pure presentation layer. All business logic, validation, and data integrity rules live in the backend. Frontend only handles UI state and user interactions.
+
+2. **Zustand Over Redux**: Minimal state management using Zustand. Tree data fetched from backend on demand, not stored globally. Only UI state (`selectedNodeId`, `expandedNodeIds`, `loading`) persists.
+
+3. **Material-UI Components**: Leverages battle-tested components for accessibility, theming, and responsive design. TreeView from `@mui/x-tree-view` provides drag-and-drop foundation.
+
+4. **Backend-Driven Validation**: Frontend performs zero business validation. All rules enforced server-side, frontend displays backend error messages directly.
+
+5. **Optimistic Updates Avoided**: No local state mutations before server confirmation. Tree refetches after successful operations to maintain single source of truth.
+
+6. **Context Menu Pattern**: Right-click menu for all node operations. Familiar desktop-like UX for file management.
+
+7. **Type Safety**: Strict TypeScript with explicit API types. Response DTOs match backend contracts exactly.
 
 ### Browser Support
 
@@ -271,7 +255,7 @@ Spring Boot backend with Clean Architecture, providing RESTful APIs for hierarch
 
 - **Java 21**: Latest LTS version
 - **Spring Boot 3.3**: Framework and REST APIs
-- **PostgreSQL**: Database with ltree extension
+- **PostgreSQL 16**: Database with path-based hierarchy
 - **Flyway**: Database migrations
 - **Maven**: Build tool
 
@@ -280,7 +264,7 @@ Spring Boot backend with Clean Architecture, providing RESTful APIs for hierarch
 **Prerequisites:**
 - Java 21
 - Maven 3.9+
-- PostgreSQL 15+ with ltree extension
+- PostgreSQL 15+
 
 **Configuration:**
 
@@ -299,22 +283,79 @@ mvn spring-boot:run
 mvn clean package
 ```
 
-### Architecture
+### Architecture & Design Decisions
 
-The backend follows Clean Architecture principles:
+**Clean Architecture Layers:**
 
-- **API Layer**: REST controllers, DTOs, exception handlers
-- **Application Layer**: Use cases and business workflows
-- **Domain Layer**: Core business logic, entities, services
-- **Infrastructure Layer**: Database persistence, external integrations
+```
+API Layer (Controllers, DTOs, Exception Handlers)
+         ↓
+Application Layer (Use Cases, Orchestration)
+         ↓
+Domain Layer (Entities, Value Objects, Domain Services)
+         ↓
+Infrastructure Layer (JPA Repositories, Adapters)
+```
+
+**Layer Responsibilities:**
+
+- **API**: HTTP concerns, request/response mapping, OpenAPI documentation
+- **Application**: Coordinate use cases, transaction boundaries, business workflows
+- **Domain**: Core business rules, validation, entity lifecycle, domain logic
+- **Infrastructure**: Database access, query implementation, persistence adapters
+
+**Key Design Decisions:**
+
+1. **Clean Architecture**: Enforces dependency inversion—domain layer has zero external dependencies. Business logic is testable without database or web frameworks.
+
+2. **Path-Based Hierarchy**: Uses string paths (`/parent/child/grandchild`) instead of recursive parent_id queries. Enables efficient subtree queries, ancestry checks, and depth calculations with simple string operations.
+
+3. **No ltree Extension**: Standard string path column with text pattern indexes. Avoids PostgreSQL-specific extensions for better portability and simpler deployment.
+
+4. **Position Management**: Each node has a `position` field for explicit ordering. `UNIQUE(parent_id, position)` constraint with `DEFERRABLE INITIALLY DEFERRED` allows safe reordering within transactions.
+
+5. **Optimistic Locking**: Version field on nodes prevents concurrent modification conflicts. Critical for multi-user environments without pessimistic locks.
+
+6. **MapStruct DTOs**: Compile-time DTO mapping eliminates reflection overhead. Clear separation between domain entities and API contracts.
+
+7. **RFC 9457 Problem Details**: Standardized error responses with machine-readable `type` URIs and human-readable `detail` messages.
+
+8. **Tag Validation**: Domain enforces tag key format (`^[a-zA-Z0-9_-]+$`, max 100 chars) and value constraints (max 500 chars). Business rules live in domain layer, not database.
+
+### Testing Strategy
+
+- **Unit Tests**: Domain and application layers tested in isolation with mocks
+- **Integration Tests**: Full Spring context with Testcontainers PostgreSQL
+- **Test Pyramid**: Fast unit tests (80%), integration tests (20%)
 
 ### Database Schema
 
-Uses PostgreSQL's `ltree` extension for efficient hierarchical queries:
+**nodes table:**
+- `id` (UUID): Primary key
+- `name`: Node name (max 255 chars)
+- `type`: FOLDER or FILE enum
+- `parent_id`: Self-referencing foreign key (CASCADE delete)
+- `path`: String path for hierarchy (e.g., `/root/child`)
+- `depth`: Cached depth for quick filtering
+- `position`: Ordering within parent
+- `version`: Optimistic locking
+- `created_at`, `updated_at`: Audit timestamps
 
-- **nodes**: Stores tree structure with path-based hierarchy
-- **tags**: Key-value tags attached to nodes
-- Indexes optimized for path traversal and tag lookups
+**tags table:**
+- `id` (UUID): Primary key
+- `node_id`: Foreign key to nodes (CASCADE delete)
+- `tag_key`: Tag key (max 100 chars, validated format)
+- `tag_value`: Tag value (max 500 chars)
+- `created_at`: Audit timestamp
+- Unique constraint: `(node_id, tag_key)`
+
+**Indexes:**
+- `idx_nodes_path_pattern`: Path pattern matching (text_pattern_ops)
+- `idx_nodes_parent`: Parent-child lookups
+- `idx_nodes_type`: Filter by type (folder/file)
+- `idx_nodes_created_at`: Sort by creation time
+- `idx_tags_node`: Tag lookup by node
+- `idx_tags_key`: Tag lookup by key
 
 ## License
 
