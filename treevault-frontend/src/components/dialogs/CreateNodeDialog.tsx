@@ -47,8 +47,10 @@ export const CreateNodeDialog: React.FC<CreateNodeDialogProps> = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        Create New {type === 'FOLDER' ? 'Folder' : 'File'}
-        {parentName && ` in "${parentName}"`}
+        {parentName 
+          ? `Create New ${type === 'FOLDER' ? 'Folder' : 'File'} in "${parentName}"`
+          : `Create New ${type === 'FOLDER' ? 'Folder' : 'File'}`
+        }
       </DialogTitle>
       <DialogContent>
         <FormControl component="fieldset" sx={{ mb: 2, mt: 1 }}>

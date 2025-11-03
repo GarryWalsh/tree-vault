@@ -11,12 +11,14 @@ import {
   Button,
   Typography,
   Skeleton,
+  IconButton,
 } from '@mui/material';
 import {
   ExpandMore,
   ChevronRight,
   Refresh as RefreshIcon,
   Error as ErrorIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useTreeStore } from '../../store/treeStore';
 import { CreateNodeDialog } from '../dialogs/CreateNodeDialog';
@@ -35,6 +37,10 @@ export const EnhancedTreeView: React.FC = () => {
     anchorEl: HTMLElement | null;
   } | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createDialogParent, setCreateDialogParent] = useState<{
+    nodeId: string;
+    nodeName: string;
+  } | null>(null);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{
@@ -95,8 +101,8 @@ export const EnhancedTreeView: React.FC = () => {
   }, [loadTree]);
 
   const handleCreateNodeDialog = async (name: string, type: 'FOLDER' | 'FILE') => {
-    if (!contextMenu) return;
-    await createNode(name, type, contextMenu.nodeId);
+    if (!createDialogParent) return;
+    await createNode(name, type, createDialogParent.nodeId);
   };
 
   const handleRenameNodeDialog = async (newName: string) => {
@@ -217,41 +223,109 @@ export const EnhancedTreeView: React.FC = () => {
     );
   }
 
+  // Check if tree is empty (root has no children)
+  const isTreeEmpty = !tree.root.children || tree.root.children.length === 0;
+
   return (
     <>
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 2, height: '600px', overflow: 'auto' }}>
-            <SimpleTreeView
-              slots={{
-                collapseIcon: ExpandMore,
-                expandIcon: ChevronRight,
-              }}
-              expandedItems={expandedNodeIds}
-              selectedItems={selectedNodeId ?? undefined}
-              onExpandedItemsChange={(_event, itemIds) =>
-                setExpandedNodes(Array.isArray(itemIds) ? itemIds : [])
-              }
-              onSelectedItemsChange={(_event, itemId) => {
-                if (Array.isArray(itemId)) {
-                  selectNode(itemId[0] ?? null);
-                } else {
-                  selectNode(itemId ?? null);
-                }
-              }}
-            >
-              <TreeNode
-                node={tree.root}
-                parentNode={null}
-                dropTargetId={dropTarget}
-                dropPosition={dropPosition}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDropWrapper}
-                onContextMenu={handleContextMenu}
-              />
-            </SimpleTreeView>
+          <Paper elevation={2} sx={{ p: 2, height: '600px', display: 'flex', flexDirection: 'column' }}>
+            {/* Header with small add button */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Folders & Files
+              </Typography>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => {
+                  // Set parent to root node for creating root-level child
+                  setCreateDialogParent({
+                    nodeId: tree.root.id,
+                    nodeName: tree.root.name,
+                  });
+                  setCreateDialogOpen(true);
+                }}
+                sx={{ 
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  }
+                }}
+              >
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            {/* Tree content area */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              {isTreeEmpty ? (
+                // Show centered message when tree is empty
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    gap: 2,
+                  }}
+                >
+                  <Typography variant="h6" color="text.secondary">
+                    Your tree is empty
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Click the button above to create your first folder or file
+                  </Typography>
+                </Box>
+              ) : (
+                // Show tree with root's children only (hide root node itself)
+                <SimpleTreeView
+                  slots={{
+                    collapseIcon: ExpandMore,
+                    expandIcon: ChevronRight,
+                  }}
+                  expandedItems={expandedNodeIds}
+                  selectedItems={selectedNodeId ?? undefined}
+                  onExpandedItemsChange={(_event, itemIds) =>
+                    setExpandedNodes(Array.isArray(itemIds) ? itemIds : [])
+                  }
+                  onSelectedItemsChange={(_event, itemId) => {
+                    if (Array.isArray(itemId)) {
+                      selectNode(itemId[0] ?? null);
+                    } else {
+                      selectNode(itemId ?? null);
+                    }
+                  }}
+                  sx={{
+                    // Remove one level of indentation since we're hiding the root node
+                    '& .MuiTreeItem-content': {
+                      paddingLeft: '0 !important',
+                    },
+                    '& > .MuiTreeItem-root > .MuiTreeItem-content': {
+                      paddingLeft: '0 !important',
+                    },
+                  }}
+                >
+                  {tree.root.children?.map((child) => (
+                    <TreeNode
+                      key={child.id}
+                      node={child}
+                      parentNode={tree.root}
+                      dropTargetId={dropTarget}
+                      dropPosition={dropPosition}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDropWrapper}
+                      onContextMenu={handleContextMenu}
+                    />
+                  ))}
+                </SimpleTreeView>
+              )}
+            </Box>
           </Paper>
         </Grid>
 
@@ -267,7 +341,7 @@ export const EnhancedTreeView: React.FC = () => {
       </Grid>
 
       <Menu
-        open={Boolean(contextMenu)}
+        open={Boolean(contextMenu?.anchorEl)}
         anchorEl={contextMenu?.anchorEl}
         onClose={() => setContextMenu(null)}
       >
@@ -277,15 +351,14 @@ export const EnhancedTreeView: React.FC = () => {
             if (contextMenu && tree) {
               const currentNode = findNodeById(contextMenu.nodeId);
               if (currentNode) {
-                setContextMenu({
+                setCreateDialogParent({
                   nodeId: currentNode.id,
                   nodeName: currentNode.name,
-                  nodeType: currentNode.type,
-                  anchorEl: null
                 });
               }
             }
             setCreateDialogOpen(true);
+            setContextMenu(null);
           }}
         >
           Create Child Node
@@ -296,6 +369,7 @@ export const EnhancedTreeView: React.FC = () => {
             if (contextMenu && tree) {
               const currentNode = findNodeById(contextMenu.nodeId);
               if (currentNode) {
+                // Update context menu with fresh data and clear anchorEl to close the menu
                 setContextMenu({
                   nodeId: currentNode.id,
                   nodeName: currentNode.name,
@@ -315,6 +389,7 @@ export const EnhancedTreeView: React.FC = () => {
             if (contextMenu && tree) {
               const currentNode = findNodeById(contextMenu.nodeId);
               if (currentNode) {
+                // Update context menu with fresh data and clear anchorEl to close the menu
                 setContextMenu({
                   nodeId: currentNode.id,
                   nodeName: currentNode.name,
@@ -330,17 +405,18 @@ export const EnhancedTreeView: React.FC = () => {
         </MenuItem>
       </Menu>
 
+      <CreateNodeDialog
+        open={createDialogOpen}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setCreateDialogParent(null);
+        }}
+        onCreate={handleCreateNodeDialog}
+        parentName={createDialogParent?.nodeId === tree.root.id ? undefined : createDialogParent?.nodeName}
+      />
+
       {contextMenu && (
         <>
-          <CreateNodeDialog
-            open={createDialogOpen}
-            onClose={() => {
-              setCreateDialogOpen(false);
-              setContextMenu(null);
-            }}
-            onCreate={handleCreateNodeDialog}
-            parentName={contextMenu.nodeName}
-          />
 
           <RenameNodeDialog
             open={renameDialogOpen}
